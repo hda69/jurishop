@@ -1,0 +1,324 @@
+// JuriShop — schéma de conformité légale
+// Compatible Prisma 6 (actuel) et migration Prisma 7 (prisma.config.ts + driver adapter)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.sqlite"
+}
+
+// ─── Shopify session (template) ───────────────────────────────────────────────
+
+model Session {
+  id                  String    @id
+  shop                String
+  state               String
+  isOnline            Boolean   @default(false)
+  scope               String?
+  expires             DateTime?
+  accessToken         String
+  userId              BigInt?
+  firstName           String?
+  lastName            String?
+  email               String?
+  accountOwner        Boolean   @default(false)
+  locale              String?
+  collaborator        Boolean?  @default(false)
+  emailVerified       Boolean?  @default(false)
+  refreshToken        String?
+  refreshTokenExpires DateTime?
+
+  shopProfile ShopComplianceProfile?
+}
+
+// ─── Profil de conformité par boutique ──────────────────────────────────────
+
+model ShopComplianceProfile {
+  id        String   @id @default(cuid())
+  shop      String   @unique
+  sessionId String?  @unique
+  session   Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  // Marchés ciblés par le marchand (ex: ["FR", "BE"])
+  primaryJurisdiction String @default("FR")
+  activeMarkets       String @default("[]") // JSON: string[]
+
+  // Synthèse globale (mis à jour après chaque audit)
+  overallStatus     ComplianceStatus @default(UNKNOWN)
+  legalPagesStatus  ComplianceStatus @default(UNKNOWN)
+  gdprStatus        ComplianceStatus @default(UNKNOWN)
+  consumerRightsStatus ComplianceStatus @default(UNKNOWN)
+  pricingStatus     ComplianceStatus @default(UNKNOWN)
+
+  lastAuditAt       DateTime?
+  lastAuditId       String?
+  openIssuesCount   Int      @default(0)
+  criticalIssuesCount Int    @default(0)
+
+  // Snapshot Shopify utile pour le contexte d'audit
+  shopName          String?
+  shopEmail         String?
+  shopCountry       String?
+  shopCurrency      String?
+  shopPlan          String?
+
+  // Préférences marchand
+  businessModel     String   @default("B2C") // B2C | B2B | MIXED
+  uiMode            String   @default("beginner") // beginner | expert
+  alertEmail        String?
+  alertsEnabled     Boolean  @default(true)
+  badgeEnabled      Boolean  @default(false)
+  siret             String?
+  companyData       String?  // JSON — données SIRENE
+
+  // Audit planifié (compense l'absence de webhooks pages/politiques)
+  scheduledAuditEnabled Boolean @default(true)
+  auditIntervalDays     Int     @default(7)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  audits          ComplianceAudit[]
+  ruleResults     ComplianceRuleResult[]
+  recommendations ComplianceRecommendation[]
+  alerts          ComplianceAlert[]
+  shareLinks      AuditShareLink[]
+
+  @@index([overallStatus])
+  @@index([lastAuditAt])
+}
+
+// ─── Audits ─────────────────────────────────────────────────────────────────
+
+model ComplianceAudit {
+  id        String @id @default(cuid())
+  shopId    String
+  shop      ShopComplianceProfile @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  status    AuditRunStatus @default(PENDING)
+  trigger   AuditTrigger   @default(MANUAL)
+
+  // Versions des packs de règles appliqués (ex: {"FR":"1.2.0","EU":"1.0.0"})
+  rulePackVersions String @default("{}")
+
+  jurisdictions    String @default("[]") // JSON: string[] — marchés audités
+  marketsSnapshot  String @default("[]") // JSON: snapshot Shopify Markets au moment de l'audit
+
+  overallStatus     ComplianceStatus?
+  legalPagesStatus  ComplianceStatus?
+  gdprStatus        ComplianceStatus?
+  consumerRightsStatus ComplianceStatus?
+  pricingStatus     ComplianceStatus?
+
+  rulesTotal   Int @default(0)
+  rulesPassed  Int @default(0)
+  rulesFailed  Int @default(0)
+  rulesSkipped Int @default(0)
+  rulesWarning Int @default(0)
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  errorMessage String?
+
+  ruleResults ComplianceRuleResult[]
+
+  @@index([shopId, startedAt])
+  @@index([status])
+}
+
+// ─── Résultat par règle ─────────────────────────────────────────────────────
+
+model ComplianceRuleResult {
+  id      String @id @default(cuid())
+  shopId  String
+  shop    ShopComplianceProfile @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  auditId String
+  audit   ComplianceAudit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+
+  ruleId       String // ex: "fr.legal_pages.mentions_legales"
+  ruleVersion  String @default("1.0.0")
+  jurisdiction String // "FR", "EU", …
+  category     RuleCategory
+  severity     RuleSeverity
+
+  status  RuleResultStatus
+  message String?
+  details String? // JSON: preuves, URLs, extraits, métadonnées
+
+  // Permet de suivre l'évolution sans réécrire l'historique
+  resolvedAt DateTime?
+
+  evaluatedAt DateTime @default(now())
+
+  recommendations ComplianceRecommendation[]
+
+  @@unique([auditId, ruleId])
+  @@index([shopId, ruleId])
+  @@index([shopId, status])
+  @@index([category])
+}
+
+// ─── Recommandations (Audit & Advisor — jamais auto-appliquées) ─────────────
+
+model ComplianceRecommendation {
+  id           String @id @default(cuid())
+  shopId       String
+  shop         ShopComplianceProfile @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  ruleResultId String?
+  ruleResult   ComplianceRuleResult? @relation(fields: [ruleResultId], references: [id], onDelete: SetNull)
+
+  ruleId       String
+  jurisdiction String
+  category     RuleCategory
+  severity     RuleSeverity
+
+  title            String
+  summary          String
+  remediationSteps String  // JSON: string[]
+  merchantActions  String  // JSON: { label, adminPath, description? }[]
+  textTemplateId   String?
+  textTemplateBody String? // Snapshot du modèle proposé (le marchand copie-colle)
+
+  status       RecommendationStatus @default(PENDING)
+  merchantNote String?
+
+  createdAt      DateTime  @default(now())
+  viewedAt       DateTime?
+  acknowledgedAt DateTime?
+  appliedAt      DateTime? // Le marchand confirme avoir appliqué manuellement
+  dismissedAt    DateTime?
+
+  @@index([shopId, status])
+  @@index([ruleId])
+}
+
+// ─── Modèles de textes juridiques (suggestions, non publiés automatiquement) ─
+
+model TextTemplate {
+  id           String @id @default(cuid())
+  slug         String // ex: "mentions-legales-fr"
+  jurisdiction String
+  category     RuleCategory
+  title        String
+  body         String // HTML/Markdown avec placeholders {{SIRET}}, etc.
+  placeholders String @default("[]") // JSON: { key, label, required, example }[]
+  legalDisclaimer String
+  version      String @default("1.0.0")
+  isActive     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([slug, version])
+  @@index([jurisdiction, category])
+}
+
+// ─── Packs de règles (optionnel — surcharge JSON embarqué) ────────────────
+// Permet d'activer des règles custom ou des mises à jour sans redéployer l'app.
+
+model RulePack {
+  id           String  @id @default(cuid())
+  jurisdiction String  // "FR", "EU", "DE", …
+  version      String
+  name         String
+  description  String?
+  isActive     Boolean @default(true)
+  rules        String  // JSON: ComplianceRuleDefinition[]
+
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([jurisdiction, version])
+  @@index([jurisdiction, isActive])
+}
+
+// ─── Alertes in-app (régressions, webhooks) ─────────────────────────────────
+
+model ComplianceAlert {
+  id        String   @id @default(cuid())
+  shopId    String
+  shop      ShopComplianceProfile @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  auditId   String?
+  type      String   // REGRESSION | NEW_ISSUE | WEBHOOK | INFO
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([shopId, isRead])
+  @@index([shopId, createdAt])
+}
+
+// ─── Partage rapport avec conseiller ────────────────────────────────────────
+
+model AuditShareLink {
+  id        String   @id @default(cuid())
+  shopId    String
+  shop      ShopComplianceProfile @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  auditId   String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([shopId])
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum ComplianceStatus {
+  UNKNOWN
+  COMPLIANT
+  WARNING
+  NON_COMPLIANT
+}
+
+enum AuditRunStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum AuditTrigger {
+  MANUAL
+  SCHEDULED
+  WEBHOOK
+  INSTALL
+}
+
+enum RuleCategory {
+  LEGAL_PAGES
+  GDPR
+  CONSUMER_RIGHTS
+  PRICING
+  TAX
+  ACCESSIBILITY
+  OTHER
+}
+
+enum RuleSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum RuleResultStatus {
+  PASS
+  FAIL
+  WARNING
+  SKIPPED
+  ERROR
+}
+
+enum RecommendationStatus {
+  PENDING
+  VIEWED
+  ACKNOWLEDGED
+  APPLIED_BY_MERCHANT
+  DISMISSED
+}

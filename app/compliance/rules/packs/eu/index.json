@@ -1,0 +1,47 @@
+{
+  "jurisdiction": "EU",
+  "version": "1.0.0",
+  "name": "Union européenne — Règles transversales",
+  "description": "Règles applicables à tous les marchés UE (directive Omnibus, RGPD commun)",
+  "rules": [
+    {
+      "id": "eu.pricing.omnibus_strikethrough",
+      "version": "1.0.0",
+      "jurisdiction": "EU",
+      "category": "pricing",
+      "severity": "warning",
+      "title": "Prix barrés cohérents (Omnibus UE)",
+      "description": "Le prix de référence barré doit être supérieur au prix de vente.",
+      "legalReference": "Directive (UE) 2019/2161",
+      "checkType": "product_pricing_strikethrough",
+      "params": {
+        "sampleSize": 50,
+        "requireCompareAtGreaterThanPrice": true
+      }
+    },
+    {
+      "id": "eu.gdpr.privacy_policy",
+      "version": "1.0.0",
+      "jurisdiction": "EU",
+      "category": "gdpr",
+      "severity": "critical",
+      "title": "Politique de confidentialité (UE)",
+      "description": "Une politique de confidentialité doit être accessible.",
+      "legalReference": "RGPD art. 13-14",
+      "checkType": "shop_policy_exists",
+      "params": { "policyType": "PRIVACY_POLICY" }
+    },
+    {
+      "id": "eu.gdpr.cookie_consent",
+      "version": "1.0.0",
+      "jurisdiction": "EU",
+      "category": "gdpr",
+      "severity": "warning",
+      "title": "Consentement cookies (UE)",
+      "description": "Un mécanisme de consentement cookies doit être en place.",
+      "legalReference": "RGPD + directive ePrivacy",
+      "checkType": "theme_cookie_banner",
+      "params": {}
+    }
+  ]
+}

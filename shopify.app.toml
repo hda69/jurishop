@@ -1,0 +1,38 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "acc0dd36ed1fe825a6df97dce173b8fe"
+application_url = "https://example.com"
+embedded = true
+name = "jurishop"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+# JuriShop — mode Audit & Advisor (lecture seule, aucune écriture boutique)
+# NB : les données de la boutique (shop, billingAddress, contactEmail…) sont
+# accessibles sans scope dédié — "read_shop" n'existe pas.
+scopes = "read_products,read_content,read_online_store_pages,read_legal_policies,read_markets,read_themes"
+
+[webhooks]
+api_version = "2026-10"
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/uninstalled"
+  topics = [ "app/uninstalled" ]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/scopes_update"
+  topics = [ "app/scopes_update" ]
+
+  # NB : Shopify n'expose pas de webhook "pages/update" ni pour les politiques
+  # légales. On surveille produits, thème et boutique ; les pages/politiques
+  # sont revérifiées lors de l'audit manuel ou d'un changement de thème.
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/compliance"
+  topics = [ "products/update", "shop/update", "themes/update", "themes/publish" ]
+
+[auth]
+redirect_urls = [ "https://example.com/api/auth" ]
+
+[build]
+include_config_on_deploy = true
+automatically_update_urls_on_dev = true

@@ -1,0 +1,334 @@
+{
+  "jurisdiction": "FR",
+  "version": "1.0.0",
+  "name": "France — Droit de la consommation",
+  "description": "Règles de conformité pour les boutiques ciblant le marché français",
+  "rules": [
+    {
+      "id": "fr.legal_pages.mentions_legales",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "legal_pages",
+      "severity": "critical",
+      "title": "Mentions légales",
+      "description": "Une page « Mentions légales » doit être accessible depuis le site.",
+      "legalReference": "LCEN art. 6-III",
+      "advisory": {
+        "remediationSteps": [
+          "Créez une nouvelle page dans Contenu > Pages.",
+          "Intitulez-la « Mentions légales » et utilisez le modèle proposé par JuriShop comme base.",
+          "Remplacez les placeholders (SIRET, RCS, capital…) par vos informations réelles.",
+          "Faites relire le texte par un professionnel du droit si nécessaire.",
+          "Publiez la page et ajoutez un lien dans le footer de votre thème."
+        ],
+        "merchantActions": [
+          {
+            "label": "Créer une page",
+            "adminPath": "/pages/new",
+            "description": "Ouvre l'éditeur de page Shopify — vous publiez manuellement."
+          },
+          {
+            "label": "Personnaliser le thème (footer)",
+            "adminPath": "/themes/current/editor",
+            "description": "Ajoutez un lien vers vos mentions légales dans le pied de page."
+          }
+        ],
+        "textTemplateId": "mentions-legales-fr"
+      },
+      "checkType": "page_exists",
+      "params": {
+        "titlePatterns": ["mentions légales", "mentions legales", "legal notice"],
+        "handlePatterns": ["mentions-legales", "mentions-legale", "legal-notice", "legal"]
+      }
+    },
+    {
+      "id": "fr.legal_pages.mentions_legales_content",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "legal_pages",
+      "severity": "critical",
+      "title": "Contenu des mentions légales",
+      "description": "Les mentions légales doivent contenir les éléments obligatoires.",
+      "legalReference": "LCEN art. 6-III",
+      "advisory": {
+        "remediationSteps": [
+          "Ouvrez votre page « Mentions légales » existante.",
+          "Vérifiez la présence des éléments manquants signalés par l'audit.",
+          "Complétez avec le modèle JuriShop si besoin, puis adaptez à votre situation.",
+          "Enregistrez et republiez — JuriShop ne modifie pas la page à votre place."
+        ],
+        "merchantActions": [
+          {
+            "label": "Modifier la page",
+            "adminPath": "/pages",
+            "description": "Liste de vos pages — sélectionnez « Mentions légales »."
+          }
+        ],
+        "textTemplateId": "mentions-legales-fr"
+      },
+      "checkType": "page_content",
+      "params": {
+        "titlePatterns": ["mentions légales", "mentions legales"],
+        "handlePatterns": ["mentions-legales", "mentions-legale"],
+        "requiredPatterns": ["SIRET|SIREN", "RCS|Registre du Commerce", "capital social|Capital"]
+      }
+    },
+    {
+      "id": "fr.legal_pages.cgv",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "legal_pages",
+      "severity": "critical",
+      "title": "Conditions Générales de Vente",
+      "description": "Les CGV doivent être accessibles avant la commande.",
+      "legalReference": "Code de la consommation art. L111-1",
+      "remediation": "Créez une page CGV ou activez la politique « Conditions de vente » dans Shopify.",
+      "checkType": "composite_any",
+      "params": {
+        "ruleIds": ["fr.legal_pages.cgv_page", "fr.legal_pages.cgv_policy"]
+      }
+    },
+    {
+      "id": "fr.legal_pages.cgv_page",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "legal_pages",
+      "severity": "critical",
+      "title": "Page CGV",
+      "description": "Page CGV détectée",
+      "checkType": "page_exists",
+      "params": {
+        "titlePatterns": ["conditions générales de vente", "cgv", "conditions generales de vente"],
+        "handlePatterns": ["cgv", "conditions-generales-de-vente", "terms-and-conditions"]
+      }
+    },
+    {
+      "id": "fr.legal_pages.cgv_policy",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "legal_pages",
+      "severity": "critical",
+      "title": "Politique Conditions de vente Shopify",
+      "description": "Politique Conditions de vente configurée",
+      "checkType": "shop_policy_exists",
+      "params": {
+        "policyType": "TERMS_OF_SERVICE"
+      }
+    },
+    {
+      "id": "fr.gdpr.privacy_policy",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "gdpr",
+      "severity": "critical",
+      "title": "Politique de confidentialité",
+      "description": "Une politique de confidentialité conforme RGPD doit être publiée.",
+      "legalReference": "RGPD art. 13-14",
+      "remediation": "Rédigez et publiez une politique de confidentialité (page ou politique Shopify).",
+      "checkType": "composite_any",
+      "params": {
+        "ruleIds": ["fr.gdpr.privacy_page", "fr.gdpr.privacy_policy_shopify"]
+      }
+    },
+    {
+      "id": "fr.gdpr.privacy_page",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "gdpr",
+      "severity": "critical",
+      "title": "Page politique de confidentialité",
+      "checkType": "page_exists",
+      "params": {
+        "titlePatterns": ["politique de confidentialité", "politique de confidentialite", "privacy policy"],
+        "handlePatterns": ["politique-de-confidentialite", "privacy-policy", "confidentialite"]
+      }
+    },
+    {
+      "id": "fr.gdpr.privacy_policy_shopify",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "gdpr",
+      "severity": "critical",
+      "title": "Politique confidentialité Shopify",
+      "checkType": "shop_policy_exists",
+      "params": {
+        "policyType": "PRIVACY_POLICY"
+      }
+    },
+    {
+      "id": "fr.gdpr.privacy_content",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "gdpr",
+      "severity": "warning",
+      "title": "Mentions RGPD dans la politique",
+      "description": "La politique doit mentionner les droits des personnes et la base légale du traitement.",
+      "legalReference": "RGPD art. 13",
+      "checkType": "shop_policy_content",
+      "params": {
+        "policyType": "PRIVACY_POLICY",
+        "requiredPatterns": ["données personnelles|donnees personnelles", "droit d'accès|droit d acces|rectification|effacement"]
+      }
+    },
+    {
+      "id": "fr.consumer_rights.withdrawal_14_days",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "consumer_rights",
+      "severity": "critical",
+      "title": "Droit de rétractation 14 jours",
+      "description": "Les informations sur le droit de rétractation de 14 jours doivent être communiquées.",
+      "legalReference": "Code de la consommation art. L221-18",
+      "applicableWhen": { "businessModel": ["B2C", "MIXED"] },
+      "remediation": "Mentionnez le délai de 14 jours dans les CGV et/ou la politique de retour.",
+      "checkType": "composite_any",
+      "params": {
+        "ruleIds": ["fr.consumer_rights.refund_policy_exists", "fr.consumer_rights.withdrawal_in_terms"]
+      }
+    },
+    {
+      "id": "fr.consumer_rights.refund_policy_exists",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "consumer_rights",
+      "severity": "critical",
+      "title": "Politique de retour",
+      "checkType": "shop_policy_exists",
+      "params": {
+        "policyType": "REFUND_POLICY"
+      }
+    },
+    {
+      "id": "fr.consumer_rights.withdrawal_in_terms",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "consumer_rights",
+      "severity": "warning",
+      "title": "Mention 14 jours dans les CGV",
+      "checkType": "shop_policy_content",
+      "params": {
+        "policyType": "TERMS_OF_SERVICE",
+        "requiredPatterns": ["14 jours|quatorze jours|rétractation|retractation"]
+      }
+    },
+    {
+      "id": "fr.pricing.strikethrough_integrity",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "pricing",
+      "severity": "warning",
+      "title": "Cohérence des prix barrés",
+      "description": "Le prix barré doit être supérieur au prix de vente actuel.",
+      "legalReference": "Directive (UE) 2019/2161 — Omnibus",
+      "remediation": "Vérifiez que compareAtPrice > price pour les produits en promotion.",
+      "checkType": "product_pricing_strikethrough",
+      "params": {
+        "sampleSize": 50,
+        "requireCompareAtGreaterThanPrice": true,
+        "flagMissingLowestPriceMention": true
+      }
+    },
+    {
+      "id": "fr.legal_pages.mediation",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "legal_pages",
+      "severity": "warning",
+      "title": "Médiation de la consommation",
+      "description": "Les CGV doivent mentionner le médiateur de la consommation.",
+      "legalReference": "Code de la consommation art. L612-1",
+      "checkType": "composite_any",
+      "params": {
+        "ruleIds": ["fr.legal_pages.mediation_terms", "fr.legal_pages.mediation_page"]
+      }
+    },
+    {
+      "id": "fr.legal_pages.mediation_terms",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "legal_pages",
+      "severity": "warning",
+      "title": "Médiation dans CGV",
+      "checkType": "shop_policy_content",
+      "params": {
+        "policyType": "TERMS_OF_SERVICE",
+        "requiredPatterns": ["médiation|mediation|médiateur|mediateur"]
+      }
+    },
+    {
+      "id": "fr.legal_pages.mediation_page",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "legal_pages",
+      "severity": "warning",
+      "title": "Page médiation",
+      "checkType": "page_content",
+      "params": {
+        "titlePatterns": ["cgv", "conditions générales", "conditions generales"],
+        "handlePatterns": ["cgv", "conditions-generales-de-vente"],
+        "requiredPatterns": ["médiation|mediation|médiateur|mediateur"]
+      }
+    },
+    {
+      "id": "fr.consumer_rights.legal_warranties",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "consumer_rights",
+      "severity": "warning",
+      "title": "Garanties légales",
+      "description": "Les CGV doivent mentionner les garanties légales de conformité et vices cachés.",
+      "legalReference": "Code de la consommation art. L217-4",
+      "applicableWhen": { "businessModel": ["B2C", "MIXED"] },
+      "checkType": "shop_policy_content",
+      "params": {
+        "policyType": "TERMS_OF_SERVICE",
+        "requiredPatterns": ["garantie légale|garantie legale|conformité|conformite|vices cachés|vices caches"]
+      }
+    },
+    {
+      "id": "fr.gdpr.cookie_banner",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "gdpr",
+      "severity": "warning",
+      "title": "Bandeau cookies",
+      "description": "Un bandeau de consentement cookies doit être présent.",
+      "legalReference": "CNIL — recommandations cookies",
+      "checkType": "theme_cookie_banner",
+      "params": {}
+    },
+    {
+      "id": "fr.gdpr.third_party_apps",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "gdpr",
+      "severity": "warning",
+      "title": "Apps tierces & RGPD",
+      "description": "Les apps installées doivent être auditées pour la protection des données.",
+      "checkType": "installed_apps_audit",
+      "params": { "warnAboveCount": 8 }
+    },
+    {
+      "id": "fr.checkout.footer_legal_links",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "legal_pages",
+      "severity": "warning",
+      "title": "Liens légaux dans le thème",
+      "checkType": "theme_footer_links",
+      "params": { "minimumMatches": 2 }
+    },
+    {
+      "id": "fr.checkout.payment_label",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "consumer_rights",
+      "severity": "warning",
+      "title": "Bouton « Commande avec obligation de paiement »",
+      "legalReference": "Code de la consommation art. L112-3",
+      "applicableWhen": { "businessModel": ["B2C", "MIXED"] },
+      "checkType": "checkout_payment_label",
+      "params": {}
+    }
+  ]
+}
