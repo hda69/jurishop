@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "name": "Union européenne — Règles transversales",
   "description": "Règles applicables à tous les marchés UE (directive Omnibus, RGPD commun)",
+  "lastLegalReview": "2026-07-08",
   "rules": [
     {
       "id": "eu.pricing.omnibus_strikethrough",

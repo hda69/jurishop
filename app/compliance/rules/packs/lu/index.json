@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "name": "Luxembourg — Droit de la consommation",
   "description": "Règles complémentaires pour les boutiques ciblant le Luxembourg (pack UE appliqué en parallèle)",
+  "lastLegalReview": "2026-07-08",
   "rules": [
     {
       "id": "lu.legal_pages.mentions_legales",

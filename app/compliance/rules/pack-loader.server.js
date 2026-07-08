@@ -33,3 +33,16 @@ export async function loadRulesById(jurisdictions) {
   const rules = flattenRules(packs);
   return new Map(rules.map((r) => [r.id, r]));
 }
+
+/** Métadonnées des packs actifs (version, date de revue, nombre de règles). */
+export async function getRulePackSummaries(jurisdictions) {
+  const packs = await loadRulePacks(jurisdictions);
+  return packs.map((pack) => ({
+    jurisdiction: pack.jurisdiction,
+    version: pack.version,
+    name: pack.name,
+    description: pack.description ?? null,
+    lastLegalReview: pack.lastLegalReview ?? null,
+    ruleCount: pack.rules.filter((r) => r.enabled !== false).length,
+  }));
+}

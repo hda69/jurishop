@@ -40,3 +40,15 @@ export function flattenRules(packs: RulePack[]): ComplianceRule[] {
 export function getPackVersions(packs: RulePack[]): Record<string, string> {
   return Object.fromEntries(packs.map((p) => [p.jurisdiction, p.version]));
 }
+
+export async function getRulePackSummaries(jurisdictions: string[]) {
+  const packs = await loadRulePacks(jurisdictions);
+  return packs.map((pack) => ({
+    jurisdiction: pack.jurisdiction,
+    version: pack.version,
+    name: pack.name,
+    description: pack.description ?? null,
+    lastLegalReview: pack.lastLegalReview ?? null,
+    ruleCount: pack.rules.filter((r) => r.enabled !== false).length,
+  }));
+}

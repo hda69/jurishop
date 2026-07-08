@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "name": "France — Droit de la consommation",
   "description": "Règles de conformité pour les boutiques ciblant le marché français",
+  "lastLegalReview": "2026-07-08",
   "rules": [
     {
       "id": "fr.legal_pages.mentions_legales",

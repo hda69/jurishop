@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "name": "Suisse — Droit de la consommation",
   "description": "Règles pour les boutiques ciblant la Suisse (hors UE — pack UE non imposé automatiquement)",
+  "lastLegalReview": "2026-07-08",
   "rules": [
     {
       "id": "ch.legal_pages.imprint",

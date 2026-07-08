@@ -166,6 +166,39 @@ Score /100, to-do priorisée, liens admin Shopify et modèles prêts à adapter.
 Vous publiez, vous décidez — JuriShop n'écrit jamais à votre place. Audit, pas avis juridique.
 ```
 
+#### Features (3 à 5 — formulaire App Store)
+
+Langage marchand, sans jargon technique. Coller titre + description dans chaque champ.
+
+| # | Titre | Description |
+|---|-------|-------------|
+| 1 | Score de conformité sur 100 | Voyez en un coup d'œil où en est votre boutique : pages légales, RGPD, droits consommateur et prix. |
+| 2 | Analyse sans toucher à votre boutique | JuriShop lit vos pages, politiques et produits. Rien n'est publié ni modifié automatiquement. |
+| 3 | Recommandations prêtes à appliquer | Pour chaque manquement : étapes simples, lien vers la bonne page admin et modèle de texte à copier. |
+| 4 | Import SIRET depuis SIRENE | Renseignez votre SIRET pour pré-remplir mentions légales et CGV avec vos données d'entreprise officielles. |
+| 5 | Rapports et suivi dans le temps | Téléchargez un rapport, consultez l'historique de vos scores et partagez un lien avec votre conseiller. |
+
+**Copier-coller (5 features)**
+
+```
+Score de conformité sur 100
+Voyez en un coup d'œil où en est votre boutique : pages légales, RGPD, droits consommateur et prix.
+
+Analyse sans toucher à votre boutique
+JuriShop lit vos pages, politiques et produits. Rien n'est publié ni modifié automatiquement.
+
+Recommandations prêtes à appliquer
+Pour chaque manquement : étapes simples, lien vers la bonne page admin et modèle de texte à copier.
+
+Import SIRET depuis SIRENE
+Renseignez votre SIRET pour pré-remplir mentions légales et CGV avec vos données d'entreprise officielles.
+
+Rapports et suivi dans le temps
+Téléchargez un rapport, consultez l'historique de vos scores et partagez un lien avec votre conseiller.
+```
+
+**Variante 3 features** (si vous préférez rester sur l’essentiel) : lignes 1, 2 et 3 uniquement.
+
 ---
 
 ## Description courte (≈ 120 caractères)

@@ -12,6 +12,20 @@ import {
   computeComplianceScore,
   getBadgeSnippet,
 } from "../models/compliance.server";
+import { resolveJurisdictions } from "../compliance/jurisdictions.server.js";
+import { getRulePackSummaries } from "../compliance/rules/pack-loader.server.js";
+
+function formatLegalReviewDate(isoDate) {
+  try {
+    return new Date(`${isoDate}T12:00:00`).toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return isoDate;
+  }
+}
 
 export const loader = async ({ request }) => {
   const { getPlanFeatures, effectivePlanFromProfile } = await import(
@@ -29,7 +43,9 @@ export const loader = async ({ request }) => {
   const planName = PLAN_MARKETING.find((p) => p.id === plan)?.name ?? plan;
   const features = getPlanFeatures(plan);
   const score = computeComplianceScore(profile);
-  return { profile, score, badgeSnippet: getBadgeSnippet(profile, score), plan, planName, features };
+  const jurisdictions = resolveJurisdictions(profile?.activeMarkets ?? ["FR"], plan);
+  const rulePacks = await getRulePackSummaries(jurisdictions);
+  return { profile, score, badgeSnippet: getBadgeSnippet(profile, score), plan, planName, features, rulePacks };
 };
 
 export const action = async ({ request }) => {
@@ -73,7 +89,7 @@ export const action = async ({ request }) => {
 };
 
 export default function SettingsPage() {
-  const { profile, score, badgeSnippet, plan, planName, features } = useLoaderData();
+  const { profile, score, badgeSnippet, plan, planName, features, rulePacks } = useLoaderData();
   const fetcher = useFetcher();
   const siretFetcher = useFetcher();
   const shopify = useAppBridge();
@@ -151,6 +167,51 @@ export default function SettingsPage() {
               </s-choice>
             </s-choice-list>
           </s-stack>
+        </s-section>
+
+        <s-section heading="Packs de règles">
+          <s-paragraph color="subdued">
+            Votre prochain audit appliquera les versions ci-dessous. Relancez un
+            audit après une mise à jour de JuriShop pour bénéficier des règles
+            les plus récentes.
+          </s-paragraph>
+          <s-stack direction="block" gap="base">
+            {rulePacks.map((pack) => (
+              <s-box
+                key={pack.jurisdiction}
+                padding="base"
+                borderWidth="base"
+                borderRadius="base"
+              >
+                <s-stack direction="block" gap="small">
+                  <s-text type="strong">{pack.name}</s-text>
+                  <s-text>
+                    Version {pack.version} — {pack.ruleCount} règle
+                    {pack.ruleCount > 1 ? "s" : ""} active
+                    {pack.ruleCount > 1 ? "s" : ""}
+                  </s-text>
+                  {pack.lastLegalReview ? (
+                    <s-text color="subdued">
+                      Dernière revue juridique :{" "}
+                      {formatLegalReviewDate(pack.lastLegalReview)}
+                    </s-text>
+                  ) : (
+                    <s-text color="subdued">
+                      Date de revue juridique non renseignée
+                    </s-text>
+                  )}
+                </s-stack>
+              </s-box>
+            ))}
+          </s-stack>
+          <s-banner tone="info" heading="À propos de l'actualité des règles">
+            <s-paragraph>
+              JuriShop compare votre boutique à des critères codés et mis à jour
+              par l&apos;équipe éditrice. Ce n&apos;est pas un avis juridique :
+              faites valider vos textes par un professionnel du droit si
+              nécessaire.
+            </s-paragraph>
+          </s-banner>
         </s-section>
 
         <s-section heading="Audit planifié">

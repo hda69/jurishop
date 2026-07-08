@@ -11,6 +11,7 @@ import { sendRegressionEmailAlerts } from "../services/email-alerts.server.js";
 import { DEFAULT_LEGAL_DISCLAIMER } from "../principles.ts";
 import { effectivePlanFromProfile, getPlanFeatures } from "../../billing/plans.server.js";
 import { getSirenePrefillContext } from "../services/sirene-prefill.server.js";
+import { resolveJurisdictions } from "../jurisdictions.server.js";
 
 const PACKS_DIR = join(process.cwd(), "app/compliance/rules/packs");
 
@@ -96,31 +97,6 @@ function filterRulesForProfile(rules, profile) {
     if (bm && !bm.includes(profile.businessModel ?? "B2C")) return false;
     return true;
   });
-}
-
-function resolveJurisdictions(activeMarkets, billingPlan = "FREE") {
-  const features =
-    billingPlan === "EXPERT"
-      ? { euPack: true, multiMarkets: true }
-      : billingPlan === "PRO"
-        ? { euPack: true, multiMarkets: false }
-        : { euPack: false, multiMarkets: false };
-
-  let markets = [...activeMarkets];
-  if (!features.euPack) {
-    markets = markets.filter((m) => m !== "EU");
-  }
-  if (!features.multiMarkets) {
-    markets = markets.filter((m) => m === "FR" || m === "EU");
-  }
-  if (markets.length === 0) markets = ["FR"];
-
-  const set = new Set(markets);
-  if (set.has("FR") && features.euPack) set.add("EU");
-  if (features.multiMarkets) {
-    if (set.has("BE") || set.has("LU")) set.add("EU");
-  }
-  return [...set];
 }
 
 async function syncRecommendations(

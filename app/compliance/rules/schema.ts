@@ -130,5 +130,7 @@ export interface RulePack {
   version: string;
   name: string;
   description?: string;
+  /** Date ISO (YYYY-MM-DD) de la dernière revue juridique du pack. */
+  lastLegalReview?: string;
   rules: ComplianceRule[];
 }
