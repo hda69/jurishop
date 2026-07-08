@@ -1,0 +1,81 @@
+{
+  "jurisdiction": "CH",
+  "version": "1.0.0",
+  "name": "Suisse — Droit de la consommation",
+  "description": "Règles pour les boutiques ciblant la Suisse (hors UE — pack UE non imposé automatiquement)",
+  "rules": [
+    {
+      "id": "ch.legal_pages.imprint",
+      "version": "1.0.0",
+      "jurisdiction": "CH",
+      "category": "legal_pages",
+      "severity": "critical",
+      "title": "Mentions légales / Impressum (Suisse)",
+      "description": "Les informations légales de l'entreprise doivent être accessibles sur le site.",
+      "legalReference": "Art. 3 LCD (CH) — obligation d'information",
+      "checkType": "page_exists",
+      "params": {
+        "titlePatterns": [
+          "mentions légales",
+          "impressum",
+          "legal notice",
+          "informations légales"
+        ],
+        "handlePatterns": [
+          "mentions-legales",
+          "impressum",
+          "legal-notice",
+          "informations-legales"
+        ]
+      }
+    },
+    {
+      "id": "ch.legal_pages.cgv",
+      "version": "1.0.0",
+      "jurisdiction": "CH",
+      "category": "legal_pages",
+      "severity": "critical",
+      "title": "Conditions générales (Suisse)",
+      "description": "Des conditions générales de vente doivent être accessibles avant l'achat.",
+      "legalReference": "Code des obligations — art. 8 LCD",
+      "checkType": "page_exists",
+      "params": {
+        "titlePatterns": ["cgv", "conditions générales", "agb", "terms and conditions"],
+        "handlePatterns": ["cgv", "conditions-generales", "agb", "terms"]
+      }
+    },
+    {
+      "id": "ch.consumer.withdrawal",
+      "version": "1.0.0",
+      "jurisdiction": "CH",
+      "category": "consumer_rights",
+      "severity": "warning",
+      "title": "Droit de rétractation (Suisse)",
+      "description": "Les CGV doivent mentionner le délai de rétractation de 14 jours.",
+      "legalReference": "Art. 40a LCD",
+      "checkType": "page_content",
+      "params": {
+        "titlePatterns": ["cgv", "conditions générales", "agb"],
+        "handlePatterns": ["cgv", "conditions-generales", "agb"],
+        "requiredPatterns": [
+          "14 jour|14 jours|quatorze jour|rétractation|retractation|widerruf"
+        ]
+      }
+    },
+    {
+      "id": "ch.pricing.transparency",
+      "version": "1.0.0",
+      "jurisdiction": "CH",
+      "category": "pricing",
+      "severity": "warning",
+      "title": "Transparence des prix (Suisse)",
+      "description": "Les prix barrés doivent rester cohérents avec le prix de vente affiché.",
+      "legalReference": "Art. 16 LCD — indication des prix",
+      "checkType": "product_pricing_strikethrough",
+      "params": {
+        "sampleSize": 50,
+        "requireCompareAtGreaterThanPrice": true
+      }
+    }
+  ]
+}

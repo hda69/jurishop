@@ -5,6 +5,7 @@ Application Shopify embarquée d'audit de conformité juridique pour boutiques f
 ## Fonctionnalités
 
 - Audit de conformité (pages légales, RGPD, droits des consommateurs, prix & promotions)
+- Packs juridictionnels : **France**, **UE**, **Belgique**, **Suisse**, **Luxembourg** (plan Expert)
 - Recommandations avec modèles de texte et liens vers l'admin Shopify
 - Rapports HTML téléchargeables (plans Pro et Expert)
 - Abonnements intégrés via la facturation Shopify (Gratuit / Pro / Expert)

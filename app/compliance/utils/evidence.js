@@ -40,6 +40,40 @@ export function formatRuleEvidence(details) {
     });
   }
 
+  if (Array.isArray(parsed.detectedKeywords) && parsed.detectedKeywords.length) {
+    items.push({
+      type: "found",
+      label: `Signaux cookies : ${parsed.detectedKeywords.join(", ")}`,
+    });
+  }
+
+  if (Array.isArray(parsed.cookieApps) && parsed.cookieApps.length) {
+    items.push({
+      type: "found",
+      label: `Apps cookies : ${parsed.cookieApps.join(", ")}`,
+    });
+  }
+
+  if (Array.isArray(parsed.trackingApps) && parsed.trackingApps.length) {
+    items.push({
+      type: "warning",
+      label: `Apps traceuses : ${parsed.trackingApps.join(", ")}`,
+    });
+  }
+
+  if (parsed.scanMethod) {
+    items.push({
+      type: "note",
+      label: `Méthode : ${parsed.scanMethod.replace(/_/g, " ")}`,
+    });
+  }
+
+  if (Array.isArray(parsed.verificationChecklist)) {
+    for (const step of parsed.verificationChecklist.slice(0, 4)) {
+      items.push({ type: "checklist", label: step });
+    }
+  }
+
   if (parsed.omnibusMissing) {
     items.push({
       type: "warning",

@@ -225,8 +225,7 @@ model TextTemplate {
   @@index([jurisdiction, category])
 }
 
-// ─── Packs de règles (optionnel — surcharge JSON embarqué) ────────────────
-// Permet d'activer des règles custom ou des mises à jour sans redéployer l'app.
+// Réservé pour surcharge future via admin — non utilisé (règles chargées depuis JSON).
 
 model RulePack {
   id           String  @id @default(cuid())

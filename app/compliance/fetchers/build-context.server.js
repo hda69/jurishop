@@ -1,5 +1,6 @@
 import { assertReadOnlyGraphQLOperation } from "../guards/read-only.server.js";
 import { normalizeText } from "../checkers/utils.js";
+import { detectCookieSignals } from "../constants/scan-signals.js";
 
 const THEME_FILES_QUERY = `#graphql
   query JuriShopThemeFiles($themeId: ID!) {
@@ -227,10 +228,10 @@ export async function buildShopAuditContext(admin, { productsFirst = 50 } = {}) 
     fetchInstalledApps(admin),
   ]);
 
-  const themeContent = themeFiles.map((f) => f.content).join("\n");
-  const hasCookieBanner = [
-    "cookie", "consent", "tarteaucitron", "axeptio", "pandectes",
-  ].some((k) => normalizeText(themeContent).includes(k));
+  const hasCookieBanner = detectCookieSignals({
+    themeFiles,
+    installedApps,
+  }).hasSignal;
 
   return {
     shop: {

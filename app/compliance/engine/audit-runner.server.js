@@ -117,8 +117,8 @@ function resolveJurisdictions(activeMarkets, billingPlan = "FREE") {
 
   const set = new Set(markets);
   if (set.has("FR") && features.euPack) set.add("EU");
-  if (features.multiMarkets && ["BE", "CH", "LU"].some((m) => set.has(m))) {
-    set.add("EU");
+  if (features.multiMarkets) {
+    if (set.has("BE") || set.has("LU")) set.add("EU");
   }
   return [...set];
 }

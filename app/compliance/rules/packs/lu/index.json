@@ -1,0 +1,77 @@
+{
+  "jurisdiction": "LU",
+  "version": "1.0.0",
+  "name": "Luxembourg — Droit de la consommation",
+  "description": "Règles complémentaires pour les boutiques ciblant le Luxembourg (pack UE appliqué en parallèle)",
+  "rules": [
+    {
+      "id": "lu.legal_pages.mentions_legales",
+      "version": "1.0.0",
+      "jurisdiction": "LU",
+      "category": "legal_pages",
+      "severity": "critical",
+      "title": "Mentions légales (Luxembourg)",
+      "description": "Une page d'informations légales doit être accessible (FR/DE/EN selon votre marché).",
+      "legalReference": "Loi du 14 août 2000 sur le commerce électronique",
+      "checkType": "page_exists",
+      "params": {
+        "titlePatterns": [
+          "mentions légales",
+          "mentions legales",
+          "legal notice",
+          "impressum",
+          "legal information"
+        ],
+        "handlePatterns": [
+          "mentions-legales",
+          "legal-notice",
+          "impressum",
+          "legal-information"
+        ]
+      }
+    },
+    {
+      "id": "lu.legal_pages.cgv",
+      "version": "1.0.0",
+      "jurisdiction": "LU",
+      "category": "legal_pages",
+      "severity": "critical",
+      "title": "Conditions générales de vente (Luxembourg)",
+      "description": "Des CGV accessibles avant la commande sont requises pour la vente B2C.",
+      "legalReference": "Code de la consommation luxembourgeois",
+      "checkType": "page_exists",
+      "params": {
+        "titlePatterns": ["cgv", "conditions générales", "conditions generales", "terms of sale"],
+        "handlePatterns": ["cgv", "conditions-generales", "terms-of-sale"]
+      }
+    },
+    {
+      "id": "lu.gdpr.privacy_policy",
+      "version": "1.0.0",
+      "jurisdiction": "LU",
+      "category": "gdpr",
+      "severity": "critical",
+      "title": "Politique de confidentialité (Luxembourg)",
+      "description": "Une politique de confidentialité conforme au RGPD doit être accessible.",
+      "legalReference": "RGPD + loi luxembourgeoise du 1er août 2018",
+      "checkType": "shop_policy_exists",
+      "params": { "policyType": "PRIVACY_POLICY" }
+    },
+    {
+      "id": "lu.consumer.mediation",
+      "version": "1.0.0",
+      "jurisdiction": "LU",
+      "category": "consumer_rights",
+      "severity": "warning",
+      "title": "Médiation consommation (Luxembourg)",
+      "description": "Les CGV doivent mentionner la possibilité de recourir à une médiation.",
+      "legalReference": "Code de la consommation — médiation",
+      "checkType": "page_content",
+      "params": {
+        "titlePatterns": ["cgv", "conditions générales", "mentions légales"],
+        "handlePatterns": ["cgv", "conditions-generales", "mentions-legales"],
+        "requiredPatterns": ["médiation|mediation|médiateur|mediateur"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "jurisdiction": "BE",
+  "version": "1.0.0",
+  "name": "Belgique — Droit de la consommation",
+  "description": "Règles complémentaires pour les boutiques ciblant la Belgique (pack UE appliqué en parallèle)",
+  "rules": [
+    {
+      "id": "be.legal_pages.mentions_legales",
+      "version": "1.0.0",
+      "jurisdiction": "BE",
+      "category": "legal_pages",
+      "severity": "critical",
+      "title": "Mentions légales (Belgique)",
+      "description": "Une page d'informations légales doit être accessible (FR/NL selon votre marché).",
+      "legalReference": "Code de droit économique belge — livre VI",
+      "checkType": "page_exists",
+      "params": {
+        "titlePatterns": [
+          "mentions légales",
+          "mentions legales",
+          "legal notice",
+          "wettelijke vermeldingen",
+          "juridische informatie"
+        ],
+        "handlePatterns": [
+          "mentions-legales",
+          "legal-notice",
+          "wettelijke-vermeldingen"
+        ]
+      }
+    },
+    {
+      "id": "be.legal_pages.cgv",
+      "version": "1.0.0",
+      "jurisdiction": "BE",
+      "category": "legal_pages",
+      "severity": "critical",
+      "title": "Conditions générales de vente (Belgique)",
+      "description": "Des CGV accessibles avant la commande sont requises pour la vente B2C.",
+      "legalReference": "Code de droit économique — livre VI, titre 3",
+      "checkType": "page_exists",
+      "params": {
+        "titlePatterns": ["cgv", "conditions générales", "conditions generales", "terms of sale"],
+        "handlePatterns": ["cgv", "conditions-generales", "terms-of-sale"]
+      }
+    },
+    {
+      "id": "be.consumer.mediation",
+      "version": "1.0.0",
+      "jurisdiction": "BE",
+      "category": "consumer_rights",
+      "severity": "warning",
+      "title": "Médiation de consommation (Belgique)",
+      "description": "Les CGV ou mentions légales doivent indiquer le service de médiation compétent.",
+      "legalReference": "Art. VI.37/1 Code de droit économique",
+      "checkType": "page_content",
+      "params": {
+        "titlePatterns": ["cgv", "conditions générales", "mentions légales"],
+        "handlePatterns": ["cgv", "conditions-generales", "mentions-legales"],
+        "requiredPatterns": [
+          "médiation|mediation|ombudsman|service de médiation|ombudsman",
+          "SPF Economie|FPS Economie"
+        ]
+      }
+    },
+    {
+      "id": "be.gdpr.privacy_policy",
+      "version": "1.0.0",
+      "jurisdiction": "BE",
+      "category": "gdpr",
+      "severity": "critical",
+      "title": "Politique de confidentialité (Belgique)",
+      "description": "Une politique de confidentialité conforme au RGPD doit être accessible.",
+      "legalReference": "RGPD + loi belge du 30 juillet 2018",
+      "checkType": "shop_policy_exists",
+      "params": { "policyType": "PRIVACY_POLICY" }
+    }
+  ]
+}

@@ -134,7 +134,7 @@ export default function SettingsPage() {
               name="markets"
               multiple
               values={markets}
-              details="Les règles de conformité sont appliquées selon les marchés sélectionnés. Belgique, Suisse et Luxembourg utilisent le pack UE en complément."
+              details="Les règles de conformité sont appliquées selon les marchés sélectionnés. Belgique et Luxembourg incluent aussi le pack UE ; la Suisse dispose de règles dédiées."
             >
               <s-choice value="FR">France</s-choice>
               <s-choice value="EU" disabled={!features.euPack}>

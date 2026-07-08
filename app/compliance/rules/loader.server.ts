@@ -4,7 +4,7 @@ import type { ComplianceRule, RulePack } from "./schema";
 
 const PACKS_DIR = join(process.cwd(), "app/compliance/rules/packs");
 
-/** Charge les packs JSON embarqués + éventuels packs DB (RulePack Prisma). */
+/** Charge les packs JSON embarqués par juridiction (FR, EU, BE, CH, LU). */
 export async function loadRulePacks(
   jurisdictions: string[],
 ): Promise<RulePack[]> {
