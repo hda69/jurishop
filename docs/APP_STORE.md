@@ -91,6 +91,32 @@ Le badge HTML (score conformité) est copié manuellement par le marchand — ce
 
 ---
 
+## Langues
+
+Deux champs distincts dans le Partner Dashboard — ne pas les confondre.
+
+### Langue de l’interface app (« Languages » / langues supportées)
+
+| Champ | Valeur |
+|-------|--------|
+| **Langues de l’interface** | **Français uniquement** |
+
+L’admin JuriShop est entièrement en français (dashboard, recommandations, paramètres, onboarding, rapports). Aucune traduction de l’UI n’existe aujourd’hui.
+
+**Ne pas cocher** : Anglais, Allemand, Néerlandais, etc.
+
+> Règle Shopify : ne lister que les langues dans lesquelles le marchand peut **utiliser l’app**, pas les langues de la boutique auditée.
+
+### Langue de la fiche App Store (listing)
+
+| Champ | Valeur |
+|-------|--------|
+| **Langue principale de la fiche** | **Français** |
+
+**Anglais (optionnel)** : vous pouvez ajouter une **traduction de la fiche** (titre, description) pour la découverte internationale, sans déclarer l’anglais comme langue d’interface tant que l’app n’est pas traduite.
+
+---
+
 ## Nom & positionnement
 
 | Champ | Proposition |
@@ -249,7 +275,9 @@ Contact support : [VOTRE EMAIL]
 ### Contenu fiche
 
 - [x] Catégorie : **Store management → Security → Legal**
-- [ ] App category details : Compliance (tags ci-dessus) + Customization **Non applicable**
+- [ ] App category details : Compliance (4 tags) + Customization **Non applicable**
+- [x] Langues interface app : **Français** uniquement
+- [ ] Langue fiche listing : **Français** (+ EN optionnel pour la description seule)
 - [ ] Nom, sous-titre, descriptions FR (et EN si souhaité)
 - [ ] 4 à 6 captures d’écran
 - [ ] Icône 1200×1200
