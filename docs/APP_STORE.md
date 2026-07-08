@@ -130,13 +130,15 @@ Vérifiez la conformité légale de votre boutique Shopify sans jamais modifier 
 
 ### Textes formulaire App Store (limites Shopify)
 
-**Introduction** — 100 caractères max (93 caractères)
+#### Version sobre (factuelle)
+
+**Introduction** — 93 caractères
 
 ```
 Audit conformité légale pour boutiques FR/UE. Score, recommandations, modèles. Lecture seule.
 ```
 
-**Détails de l’app** — 500 caractères max (464 caractères)
+**Détails de l’app** — 464 caractères
 
 ```
 JuriShop audite votre boutique Shopify en lecture seule et signale les écarts de conformité : mentions légales, CGV, RGPD, cookies, droits consommateur et prix Omnibus (France & UE).
@@ -144,6 +146,24 @@ JuriShop audite votre boutique Shopify en lecture seule et signale les écarts d
 Score /100, recommandations avec liens vers l'admin et modèles à personnaliser. Pro : audits illimités, rapports HTML. Expert : SIRENE et marchés BE/CH/LU. Essai 14 jours sur les plans payants.
 
 Jamais de modification auto. Historique et suivi de score. Audit, pas avis juridique.
+```
+
+#### Version marketing (recommandée)
+
+**Introduction** — 87 caractères
+
+```
+Conformité légale sans stress : score, plan d'action et modèles prêts. Zéro modif auto.
+```
+
+**Détails de l’app** — 457 caractères
+
+```
+Vendez sereinement en France et en Europe. JuriShop scanne votre boutique en lecture seule et révèle quoi corriger : mentions légales, CGV, RGPD, cookies, droits consommateur et prix Omnibus.
+
+Score /100, to-do priorisée, liens admin Shopify et modèles prêts à adapter. Pro : audits illimités, rapports HTML, alertes. Expert : SIRENE + BE/CH/LU. Essai 14 jours.
+
+Vous publiez, vous décidez — JuriShop n'écrit jamais à votre place. Audit, pas avis juridique.
 ```
 
 ---
