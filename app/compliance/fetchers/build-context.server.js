@@ -48,10 +48,10 @@ const SHOP_QUERY = `#graphql
       myshopifyDomain
       currencyCode
       primaryDomain { url }
-      shopAddress {
+      billingAddress {
         company address1 city zip countryCodeV2
       }
-      plan { publicDisplayName }
+      plan { displayName }
       shopPolicies { type title body url }
     }
   }
@@ -221,11 +221,9 @@ export async function buildShopAuditContext(admin, { productsFirst = 50 } = {}) 
       contactEmail: shop.contactEmail,
       myshopifyDomain: shop.myshopifyDomain,
       primaryDomain: shop.primaryDomain,
-      billingAddress: shop.shopAddress,
+      billingAddress: shop.billingAddress,
       currencyCode: shop.currencyCode,
-      plan: shop.plan
-        ? { displayName: shop.plan.publicDisplayName }
-        : null,
+      plan: shop.plan,
     },
     pages: (data.pages?.nodes ?? []).map((page) => ({
       id: page.id,
