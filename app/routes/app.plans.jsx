@@ -13,16 +13,7 @@ import {
   resolveMerchantPlan,
   setBillingPlanFree,
 } from "../billing/subscription.server.js";
-
-function resolveAppUrl() {
-  if (process.env.SHOPIFY_APP_URL) {
-    return process.env.SHOPIFY_APP_URL.replace(/\/$/, "");
-  }
-  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
-    return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
-  }
-  return "";
-}
+import { buildEmbeddedBillingReturnUrl } from "../billing/return-url.server.js";
 
 export const loader = async ({ request }) => {
   const { plan, features, profile } = await resolveMerchantPlan(request, authenticate);
@@ -54,7 +45,9 @@ export const action = async ({ request }) => {
   const { session, billing } = await authenticate.admin(request);
   const formData = await request.formData();
   const intent = formData.get("intent");
-  const returnUrl = `${resolveAppUrl()}/app/plans?billing_return=1`;
+  const returnUrl = buildEmbeddedBillingReturnUrl(session, "/app/plans", {
+    billing_return: "1",
+  });
   const test = isBillingTestMode();
 
   if (intent === "subscribe_pro") {
