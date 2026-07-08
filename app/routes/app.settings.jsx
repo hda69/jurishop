@@ -187,7 +187,7 @@ export default function SettingsPage() {
             <s-text-field
               label="Email d'alerte"
               name="alertEmail"
-              details="Recevez un email en cas de régression de conformité (nécessite RESEND_API_KEY côté serveur)."
+              details="Si renseigné, vous recevrez un email lorsqu'une régression de conformité est détectée après un audit."
               value={profile?.alertEmail ?? ""}
             />
             <s-switch
