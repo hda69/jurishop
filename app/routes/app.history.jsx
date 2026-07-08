@@ -91,12 +91,39 @@ function scoreColor(score) {
   return "#e51c00";
 }
 
+function chartAxisLabels(audits) {
+  const dayCounts = new Map();
+  for (const audit of audits) {
+    const day = new Date(audit.startedAt).toLocaleDateString("fr-FR");
+    dayCounts.set(day, (dayCounts.get(day) ?? 0) + 1);
+  }
+  return audits.map((audit) => {
+    const date = new Date(audit.startedAt);
+    const day = date.toLocaleDateString("fr-FR");
+    const label = date.toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "short",
+    });
+    if ((dayCounts.get(day) ?? 0) > 1) {
+      return {
+        primary: label,
+        secondary: date.toLocaleTimeString("fr-FR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+    }
+    return { primary: label, secondary: null };
+  });
+}
+
 function ScoreChart({ audits }) {
   if (audits.length === 0) return null;
   const ordered = [...audits].reverse().slice(-10);
+  const axisLabels = chartAxisLabels(ordered);
   const width = 400;
-  const height = 160;
-  const pad = { top: 12, right: 16, bottom: 32, left: 36 };
+  const height = axisLabels.some((l) => l.secondary) ? 172 : 160;
+  const pad = { top: 12, right: 16, bottom: axisLabels.some((l) => l.secondary) ? 44 : 32, left: 36 };
   const plotW = width - pad.left - pad.right;
   const plotH = height - pad.top - pad.bottom;
   const count = ordered.length;
@@ -165,7 +192,7 @@ function ScoreChart({ audits }) {
           />
         )}
 
-        {points.map(({ audit, barX, y, barH, x }) => (
+        {points.map(({ audit, barX, y, barH, x }, i) => (
           <g key={audit.id}>
             <rect
               x={barX}
@@ -178,16 +205,24 @@ function ScoreChart({ audits }) {
             <circle cx={x} cy={y} r={3} fill="#2c6ecb" />
             <text
               x={x}
-              y={height - 10}
+              y={height - (axisLabels[i].secondary ? 18 : 10)}
               textAnchor="middle"
               fontSize={10}
               fill="#6d7175"
             >
-              {new Date(audit.startedAt).toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "short",
-              })}
+              {axisLabels[i].primary}
             </text>
+            {axisLabels[i].secondary && (
+              <text
+                x={x}
+                y={height - 6}
+                textAnchor="middle"
+                fontSize={9}
+                fill="#8a8a8a"
+              >
+                {axisLabels[i].secondary}
+              </text>
+            )}
             <text
               x={x}
               y={y - 6}
