@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { redirect, useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData, useLocation, useNavigate } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
+import { appRedirect } from "../utils/app-redirect.server.js";
 import {
   computeScoreBreakdown,
   ensureShopProfile,
@@ -28,7 +29,7 @@ export const loader = async ({ request }) => {
   const profile = serializeProfile(await getShopProfile(session.shop));
 
   if (profile?.onboardingDismissed) {
-    throw redirect("/app");
+    throw appRedirect(request, "/app");
   }
 
   const { getPlanFeatures } = await import("../billing/plans.server.js");
@@ -61,7 +62,7 @@ export const action = async ({ request }) => {
     try {
       await runAudit(admin, session.shop, { trigger: "MANUAL" });
       await updateShopSettings(session.shop, { onboardingDismissed: true });
-      return redirect("/app");
+      return { ok: true, done: true, message: "Premier audit terminé" };
     } catch (error) {
       return {
         ok: false,
@@ -73,7 +74,7 @@ export const action = async ({ request }) => {
 
   if (intent === "complete") {
     await updateShopSettings(session.shop, { onboardingDismissed: true });
-    return redirect("/app");
+    return { ok: true, done: true };
   }
 
   return { ok: false };
@@ -82,6 +83,8 @@ export const action = async ({ request }) => {
 export default function OnboardingPage() {
   const { profile, features, scoreBreakdown } = useLoaderData();
   const fetcher = useFetcher();
+  const navigate = useNavigate();
+  const location = useLocation();
   const shopify = useAppBridge();
   const [step, setStep] = useState(0);
   const isAuditing =
@@ -96,7 +99,10 @@ export default function OnboardingPage() {
     if (fetcher.state === "idle" && fetcher.data?.ok && fetcher.data?.step === "profile") {
       setStep(2);
     }
-  }, [fetcher.state, fetcher.data, shopify]);
+    if (fetcher.state === "idle" && fetcher.data?.done) {
+      navigate(`/app${location.search}`);
+    }
+  }, [fetcher.state, fetcher.data, shopify, navigate, location.search]);
 
   const stepMeta = STEPS[step];
 

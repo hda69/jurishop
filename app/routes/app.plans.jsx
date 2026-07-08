@@ -1,4 +1,4 @@
-import { redirect, useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useEffect } from "react";
@@ -15,6 +15,7 @@ import {
   setBillingPlanFree,
 } from "../billing/subscription.server.js";
 import { buildEmbeddedBillingReturnUrl } from "../billing/return-url.server.js";
+import { appRedirect } from "../utils/app-redirect.server.js";
 
 export const loader = async ({ request }) => {
   const { plan, features, profile } = await resolveMerchantPlan(request, authenticate);
@@ -84,7 +85,7 @@ export const action = async ({ request }) => {
     }
 
     await setBillingPlanFree(session.shop);
-    return redirect("/app/plans");
+    return appRedirect(request, "/app/plans");
   }
 
   return { ok: false };

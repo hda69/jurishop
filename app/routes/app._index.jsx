@@ -1,8 +1,9 @@
 import { useEffect } from "react";
-import { redirect, useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
+import { appRedirect } from "../utils/app-redirect.server.js";
 import {
   computeComplianceScore,
   computeScoreBreakdown,
@@ -62,7 +63,7 @@ export const loader = async ({ request }) => {
 
   const serialized = serializeProfile(profile);
   if (!serialized.onboardingDismissed) {
-    throw redirect("/app/onboarding");
+    throw appRedirect(request, "/app/onboarding");
   }
   const plan = effectivePlanFromProfile(serialized);
   const features = getPlanFeatures(plan);
