@@ -31,6 +31,41 @@ Store design, Marketing, Cookie consent (JuriShop vérifie les cookies mais ne f
 
 ---
 
+## App category details (tags structurés)
+
+Champs du formulaire **Store management › Security › Legal**. Ne cochez que ce que JuriShop **fait réellement** (audit + recommandations, pas d’installation de widgets).
+
+### Customization — Personnalisation
+
+| Action | |
+|--------|---|
+| **Cocher** | **Not applicable for this app** / **Non applicable pour cette app** |
+
+JuriShop n’ajoute pas de case à cocher checkout, pop-ups, couleurs ni polices sur la boutique. C’est un outil d’audit en lecture seule.
+
+### Compliance — Conformité
+
+**Minimum 1 tag obligatoire.** Cochez uniquement les domaines que l’app **audite** :
+
+| Tag (si présent dans la liste) | Cocher ? | Pourquoi |
+|--------------------------------|----------|----------|
+| **Terms and conditions** / CGV / conditions générales | ✅ Oui | Règles CGV + contenu (FR, BE, CH, LU) |
+| **Privacy policy** / RGPD / GDPR / confidentialité | ✅ Oui | Politiques + pages confidentialité |
+| **Cookie consent** / cookies / consentement | ✅ Oui | Détection CMP + checklist (audit, pas installation) |
+| **Legal notices** / mentions légales | ✅ Oui | Mentions légales + contenu obligatoire |
+| **Consumer rights** / droits consommateurs / rétractation | ✅ Oui | Rétractation, médiation, droits consommateur |
+| **Pricing** / prix / transparence tarifaire / Omnibus | ✅ Oui | Prix barrés + directive Omnibus |
+| **Product warnings** / avertissements produits | ⚠️ Optionnel | Uniquement si vous l’associez à l’Omnibus / info prix produit |
+| **Accessibility** / accessibilité | ❌ Non | Pas d’audit WCAG / ADA dans JuriShop |
+| **Age verification** / vérification de l’âge | ❌ Non | Pas de contrôle d’âge ni de gate 18+ |
+
+**Sélection minimale recommandée (3–5 tags)**  
+CGV · Politique de confidentialité / RGPD · Cookies · Mentions légales · (optionnel) Droits consommateurs ou Prix/Omnibus
+
+**Ne pas sur-cocher** : la review Shopify vérifie que les tags correspondent à l’app. Mieux vaut 4 tags précis que 15 approximatifs.
+
+---
+
 ## Nom & positionnement
 
 | Champ | Proposition |
@@ -189,6 +224,7 @@ Contact support : [VOTRE EMAIL]
 ### Contenu fiche
 
 - [x] Catégorie : **Store management → Security → Legal**
+- [ ] App category details : Compliance (tags ci-dessus) + Customization **Non applicable**
 - [ ] Nom, sous-titre, descriptions FR (et EN si souhaité)
 - [ ] 4 à 6 captures d’écran
 - [ ] Icône 1200×1200
