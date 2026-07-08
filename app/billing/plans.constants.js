@@ -45,10 +45,10 @@ export const PLAN_MARKETING = [
     id: PLAN_IDS.EXPERT,
     name: "Expert",
     price: PLAN_PRICING[PLAN_IDS.EXPERT].label,
-    description: "Pour les marchands exigeants et les structures complexes.",
+    description: "Pour les marchands exigeants et les structures identifiées (SARL, SAS…).",
     features: [
       "Tout le plan Pro",
-      "Recherche SIRENE / SIRET",
+      "Pré-remplissage SIRENE — modèles de mentions légales auto-complétés (SIRET, RCS, TVA, adresse…)",
       "Mode expert (références légales)",
       "Multi-marchés avancé",
       "Historique étendu (50 audits)",

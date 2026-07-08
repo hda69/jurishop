@@ -226,10 +226,17 @@ export default function SettingsPage() {
       </fetcher.Form>
 
       <s-section slot="aside" heading="SIRENE — pré-remplissage">
+        <s-paragraph color="subdued">
+          Entrez votre SIRET pour importer vos informations légales depuis le
+          registre officiel. Elles pré-remplissent les modèles de mentions
+          légales et CGV dans vos recommandations (capital social et téléphone
+          restent à compléter manuellement).
+        </s-paragraph>
         {!features.sirene && (
           <s-banner tone="info">
             <s-paragraph>
-              La recherche SIRENE est incluse dans le plan Expert.{" "}
+              Le pré-remplissage SIRENE est inclus dans le plan Expert — passez
+              de l&apos;audit à la correction en quelques clics.{" "}
               <s-link href="/app/plans">Passer au plan Expert</s-link>
             </s-paragraph>
           </s-banner>
