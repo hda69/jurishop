@@ -50,7 +50,7 @@ export const PLAN_MARKETING = [
       "Tout le plan Pro",
       "Pré-remplissage SIRENE — modèles de mentions légales auto-complétés (SIRET, RCS, TVA, adresse…)",
       "Mode expert (références légales)",
-      "Multi-marchés avancé",
+      "Multi-marchés : Belgique, Suisse, Luxembourg",
       "Historique étendu (50 audits)",
     ],
   },

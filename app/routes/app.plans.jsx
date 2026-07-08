@@ -8,6 +8,7 @@ import {
   PRO_PLAN,
 } from "../shopify.server";
 import { PLAN_IDS, PLAN_MARKETING } from "../billing/plans.constants.js";
+import { PLAN_COMPARISON_ROWS } from "../billing/plans.comparison.js";
 import { isBillingTestMode } from "../billing/plans.server.js";
 import {
   resolveMerchantPlan,
@@ -199,6 +200,51 @@ export default function PlansPage() {
             );
           })}
         </s-stack>
+      </s-section>
+
+      <s-section heading="Comparatif des fonctionnalités">
+        <div style={{ overflowX: "auto" }}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: "14px",
+            }}
+          >
+            <thead>
+              <tr>
+                <th style={{ textAlign: "left", padding: "10px 8px" }}>
+                  Fonctionnalité
+                </th>
+                <th style={{ textAlign: "center", padding: "10px 8px" }}>
+                  Gratuit
+                </th>
+                <th style={{ textAlign: "center", padding: "10px 8px" }}>
+                  Pro
+                </th>
+                <th style={{ textAlign: "center", padding: "10px 8px" }}>
+                  Expert
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {PLAN_COMPARISON_ROWS.map((row) => (
+                <tr key={row.feature} style={{ borderTop: "1px solid #e3e3e3" }}>
+                  <td style={{ padding: "10px 8px" }}>{row.feature}</td>
+                  <td style={{ textAlign: "center", padding: "10px 8px" }}>
+                    {row.free}
+                  </td>
+                  <td style={{ textAlign: "center", padding: "10px 8px" }}>
+                    {row.pro}
+                  </td>
+                  <td style={{ textAlign: "center", padding: "10px 8px" }}>
+                    {row.expert}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </s-section>
 
       <s-section slot="aside" heading="Facturation Shopify">

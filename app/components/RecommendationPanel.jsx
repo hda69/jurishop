@@ -2,6 +2,7 @@
 import { useFetcher, useRevalidator } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useCallback, useEffect, useState } from "react";
+import { formatRuleEvidence } from "../compliance/utils/evidence.js";
 
 const CATEGORY_LABELS = {
   LEGAL_PAGES: "Pages légales",
@@ -90,6 +91,8 @@ function RecommendationCard({ recommendation, shopDomain, expertMode }) {
     );
   };
 
+  const evidence = formatRuleEvidence(recommendation.evidenceDetails);
+
   return (
     <s-box
       padding="base"
@@ -138,6 +141,20 @@ function RecommendationCard({ recommendation, shopDomain, expertMode }) {
                 <s-list-item key={step}>{step}</s-list-item>
               ))}
             </s-unordered-list>
+
+            {evidence.length > 0 && (
+              <>
+                <s-text type="strong">Preuves détectées par l&apos;audit</s-text>
+                <s-unordered-list>
+                  {evidence.map((item) => (
+                    <s-list-item key={`${item.type}-${item.label}`}>
+                      {item.label}
+                      {item.detail ? ` — ${item.detail}` : ""}
+                    </s-list-item>
+                  ))}
+                </s-unordered-list>
+              </>
+            )}
 
             {recommendation.merchantActions.length > 0 && (
               <>

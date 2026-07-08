@@ -89,6 +89,16 @@ export default function RecommendationsPage() {
     auditFetcher.state !== "idle" &&
     auditFetcher.formData?.get("intent") === "run_audit";
 
+  const filterCounts = {
+    open: recommendations.filter(
+      (r) => !["APPLIED_BY_MERCHANT", "DISMISSED"].includes(r.status),
+    ).length,
+    all: recommendations.length,
+    resolved: recommendations.filter((r) =>
+      ["APPLIED_BY_MERCHANT", "DISMISSED"].includes(r.status),
+    ).length,
+  };
+
   useEffect(() => {
     if (auditFetcher.state === "idle" && auditFetcher.data?.message) {
       if (auditFetcher.data.audit) revalidator.revalidate();
@@ -137,19 +147,19 @@ export default function RecommendationsPage() {
             variant={filter === "open" ? "primary" : "secondary"}
             onClick={() => setFilter("open")}
           >
-            À traiter
+            À traiter ({filterCounts.open})
           </s-button>
           <s-button
             variant={filter === "all" ? "primary" : "secondary"}
             onClick={() => setFilter("all")}
           >
-            Toutes
+            Toutes ({filterCounts.all})
           </s-button>
           <s-button
             variant={filter === "resolved" ? "primary" : "secondary"}
             onClick={() => setFilter("resolved")}
           >
-            Traitées
+            Traitées ({filterCounts.resolved})
           </s-button>
           <s-button
             variant="tertiary"

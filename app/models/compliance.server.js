@@ -79,7 +79,9 @@ function enforceSettingsForPlan(plan, settings) {
   }
   if (!features.multiMarkets) {
     const markets = next.activeMarkets ?? ["FR"];
-    next.activeMarkets = markets.filter((m) => m === "FR" || m === "EU");
+    next.activeMarkets = markets.filter((m) =>
+      features.euPack ? ["FR", "EU"].includes(m) : m === "FR",
+    );
     if (!features.euPack) {
       next.activeMarkets = ["FR"];
     }
@@ -111,6 +113,11 @@ export async function updateShopSettings(shop, settings) {
   const markets = gated.activeMarkets ?? JSON.parse(profile.activeMarkets);
   if (markets.includes("EU")) {
     const check = assertPlanFeature(profile, "euPack");
+    if (!check.allowed) throw new Error(check.reason);
+  }
+  const expertMarkets = markets.filter((m) => ["BE", "CH", "LU"].includes(m));
+  if (expertMarkets.length > 0) {
+    const check = assertPlanFeature(profile, "multiMarkets");
     if (!check.allowed) throw new Error(check.reason);
   }
   if (gated.sireneAutoPrefill) {
@@ -281,6 +288,9 @@ export async function getRecommendations(shop, { category } = {}) {
   const rows = await prisma.complianceRecommendation.findMany({
     where,
     orderBy: { createdAt: "desc" },
+    include: {
+      ruleResult: { select: { details: true } },
+    },
   });
 
   const severityOrder = { CRITICAL: 0, WARNING: 1, INFO: 2 };
@@ -355,6 +365,7 @@ function serializeRecommendation(row) {
     merchantActions: JSON.parse(row.merchantActions),
     textTemplateId: row.textTemplateId,
     textTemplateBody: row.textTemplateBody,
+    evidenceDetails: row.ruleResult?.details ?? null,
     status: row.status,
     merchantNote: row.merchantNote,
     legalDisclaimer: DEFAULT_LEGAL_DISCLAIMER,
@@ -394,13 +405,46 @@ export function computeComplianceScore(profile) {
     profile?.pricingStatus,
   ];
   const scores = fields.map((s) => weights[s] ?? 0);
-  return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+  return Math.round(scores.reduce((a, b) => a + b, 0) / fields.length);
+}
+
+const SCORE_DOMAIN_LABELS = {
+  legalPagesStatus: "Pages légales",
+  gdprStatus: "RGPD",
+  consumerRightsStatus: "Droits des consommateurs",
+  pricingStatus: "Prix & promotions",
+};
+
+export function computeScoreBreakdown(profile) {
+  const weights = {
+    COMPLIANT: 100,
+    WARNING: 60,
+    NON_COMPLIANT: 20,
+    UNKNOWN: 0,
+  };
+  return Object.entries(SCORE_DOMAIN_LABELS).map(([key, label]) => ({
+    key,
+    label,
+    status: profile?.[key] ?? "UNKNOWN",
+    points: weights[profile?.[key]] ?? 0,
+  }));
+}
+
+function resolveAppPublicUrl() {
+  if (process.env.SHOPIFY_APP_URL) {
+    return process.env.SHOPIFY_APP_URL.replace(/\/$/, "");
+  }
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+  }
+  return "";
 }
 
 export function getBadgeSnippet(profile, score) {
   if (!profile?.badgeEnabled || score < 80) return null;
+  const href = resolveAppPublicUrl() || "#";
   return `<!-- JuriShop Badge -->
-<a href="https://jurishop.app" target="_blank" rel="noopener" style="font-size:12px;color:#666;text-decoration:none;">
+<a href="${href}" target="_blank" rel="noopener" style="font-size:12px;color:#666;text-decoration:none;">
   ✓ Conformité vérifiée par JuriShop (${score}/100)
 </a>`;
 }

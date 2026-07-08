@@ -1,10 +1,11 @@
 import { useEffect } from "react";
-import { useFetcher, useLoaderData } from "react-router";
+import { redirect, useFetcher, useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import {
   computeComplianceScore,
+  computeScoreBreakdown,
   daysUntilNextAudit,
   ensureAuditCurrent,
   getAuditHistory,
@@ -60,6 +61,9 @@ export const loader = async ({ request }) => {
   const profile = await ensureAuditCurrent(admin, shop);
 
   const serialized = serializeProfile(profile);
+  if (!serialized.onboardingDismissed) {
+    throw redirect("/app/onboarding");
+  }
   const plan = effectivePlanFromProfile(serialized);
   const features = getPlanFeatures(plan);
   const alerts = await getUnreadAlerts(shop);
@@ -75,6 +79,7 @@ export const loader = async ({ request }) => {
     features,
     auditsRemaining,
     score,
+    scoreBreakdown: computeScoreBreakdown(serialized),
     nextAuditInDays,
     alerts: alerts.map((a) => ({
       ...a,
@@ -118,12 +123,6 @@ export const action = async ({ request }) => {
     return { ok: true };
   }
 
-  if (formData.get("intent") === "dismiss_onboarding") {
-    const { updateShopSettings } = await import("../models/compliance.server.js");
-    await updateShopSettings(session.shop, { onboardingDismissed: true });
-    return { ok: true };
-  }
-
   return { ok: false };
 };
 
@@ -138,6 +137,7 @@ export default function Index() {
     planName,
     features,
     auditsRemaining,
+    scoreBreakdown,
   } = useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
@@ -189,23 +189,42 @@ export default function Index() {
         </s-banner>
       )}
 
-      {!profile?.onboardingDismissed && (
-        <s-banner tone="info" heading="Bienvenue sur JuriShop">
-          <s-stack direction="block" gap="base">
-            <s-paragraph>
-              1. Renseignez votre SIRET dans les Paramètres (plan Expert) · 2.
-              Lancez un premier audit · 3. Suivez les recommandations pour corriger
-              votre conformité.
-            </s-paragraph>
-            <fetcher.Form method="post">
-              <input type="hidden" name="intent" value="dismiss_onboarding" />
-              <s-button type="submit" variant="tertiary">
-                Masquer ce guide
-              </s-button>
-            </fetcher.Form>
+      <s-section heading="Score de conformité">
+        <s-stack direction="block" gap="base">
+          <s-stack direction="inline" gap="base">
+            <s-badge tone={scoreTone}>{score}/100</s-badge>
+            <s-badge>{planName}</s-badge>
+            <s-text>
+              Modèle {profile?.businessModel ?? "B2C"} ·{" "}
+              {profile?.uiMode === "expert" ? "Mode expert" : "Mode débutant"}
+            </s-text>
           </s-stack>
-        </s-banner>
-      )}
+          <s-paragraph color="subdued">
+            Moyenne de 4 domaines : Conforme = 100 pts, À améliorer = 60 pts,
+            Non conforme = 20 pts, Non audité = 0 pt.
+          </s-paragraph>
+          <s-stack direction="block" gap="small">
+            {scoreBreakdown.map((domain) => (
+              <s-stack key={domain.key} direction="inline" gap="base">
+                <s-text>{domain.label}</s-text>
+                <s-badge
+                  tone={
+                    domain.status === "COMPLIANT"
+                      ? "success"
+                      : domain.status === "WARNING"
+                        ? "warning"
+                        : domain.status === "NON_COMPLIANT"
+                          ? "critical"
+                          : "info"
+                  }
+                >
+                  {domain.points} pts
+                </s-badge>
+              </s-stack>
+            ))}
+          </s-stack>
+        </s-stack>
+      </s-section>
 
       {alerts.length > 0 && (
         <s-banner tone="warning" heading={`${alerts.length} alerte(s)`}>
@@ -224,17 +243,6 @@ export default function Index() {
           </s-stack>
         </s-banner>
       )}
-
-      <s-section heading="Score de conformité">
-        <s-stack direction="inline" gap="base">
-          <s-badge tone={scoreTone}>{score}/100</s-badge>
-          <s-badge>{planName}</s-badge>
-          <s-text>
-            Modèle {profile?.businessModel ?? "B2C"} ·{" "}
-            {profile?.uiMode === "expert" ? "Mode expert" : "Mode débutant"}
-          </s-text>
-        </s-stack>
-      </s-section>
 
       <ComplianceSummary profile={profile} />
 
