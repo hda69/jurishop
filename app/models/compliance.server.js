@@ -4,6 +4,7 @@ import { DEFAULT_LEGAL_DISCLAIMER } from "../compliance/principles.ts";
 import { runComplianceAudit } from "../compliance/engine/audit-runner.server.js";
 import { fetchCompanyBySiret } from "../compliance/services/sirene.server.js";
 import { generateAuditReportHtml } from "../compliance/services/report.server.js";
+import { loadRulesById } from "../compliance/rules/pack-loader.server.js";
 import {
   getUnreadAlerts,
   markAlertsRead,
@@ -197,7 +198,16 @@ export async function exportAuditReport(shop, auditId) {
 
   const data = await getAuditWithResults(shop, auditId);
   if (!data) throw new Response("Audit introuvable", { status: 404 });
-  return generateAuditReportHtml({ shop, ...data });
+
+  let jurisdictions = ["FR"];
+  try {
+    jurisdictions = JSON.parse(data.audit.jurisdictions || '["FR"]');
+  } catch {
+    // valeur par défaut
+  }
+  const rulesById = await loadRulesById(jurisdictions);
+
+  return generateAuditReportHtml({ shop, ...data, rulesById });
 }
 
 export async function createShareLink(shop, auditId) {
@@ -235,7 +245,15 @@ export async function getSharedReport(token) {
   const data = await getAuditWithResults(link.shop.shop, link.auditId);
   if (!data) throw new Response("Rapport introuvable", { status: 404 });
 
-  return generateAuditReportHtml({ shop: link.shop.shop, ...data });
+  let jurisdictions = ["FR"];
+  try {
+    jurisdictions = JSON.parse(data.audit.jurisdictions || '["FR"]');
+  } catch {
+    // valeur par défaut
+  }
+  const rulesById = await loadRulesById(jurisdictions);
+
+  return generateAuditReportHtml({ shop: link.shop.shop, ...data, rulesById });
 }
 
 export async function getRecommendations(shop) {
