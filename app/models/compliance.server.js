@@ -84,6 +84,9 @@ function enforceSettingsForPlan(plan, settings) {
       next.activeMarkets = ["FR"];
     }
   }
+  if (!features.sirene) {
+    next.sireneAutoPrefill = false;
+  }
 
   return next;
 }
@@ -108,6 +111,10 @@ export async function updateShopSettings(shop, settings) {
   const markets = gated.activeMarkets ?? JSON.parse(profile.activeMarkets);
   if (markets.includes("EU")) {
     const check = assertPlanFeature(profile, "euPack");
+    if (!check.allowed) throw new Error(check.reason);
+  }
+  if (gated.sireneAutoPrefill) {
+    const check = assertPlanFeature(profile, "sirene");
     if (!check.allowed) throw new Error(check.reason);
   }
 
@@ -140,6 +147,10 @@ export async function updateShopSettings(shop, settings) {
         gated.auditIntervalDays !== undefined
           ? gated.auditIntervalDays
           : profile.auditIntervalDays,
+      sireneAutoPrefill:
+        gated.sireneAutoPrefill !== undefined
+          ? gated.sireneAutoPrefill
+          : profile.sireneAutoPrefill,
     },
   });
 }

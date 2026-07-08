@@ -29,6 +29,7 @@ async function enforceFreePlanSettings(shop) {
   const needsUpdate =
     profile.scheduledAuditEnabled ||
     profile.uiMode === "expert" ||
+    profile.sireneAutoPrefill ||
     markets.some((m) => m !== "FR") ||
     profile.billingPlan !== PLAN_IDS.FREE;
 
@@ -42,6 +43,7 @@ async function enforceFreePlanSettings(shop) {
       billingSubscriptionStatus: null,
       scheduledAuditEnabled: false,
       uiMode: "beginner",
+      sireneAutoPrefill: false,
       activeMarkets: JSON.stringify(nextMarkets),
     },
   });

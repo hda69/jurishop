@@ -52,6 +52,7 @@ export const action = async ({ request }) => {
       auditIntervalDays: parseInt(formData.get("auditIntervalDays") || "7", 10),
       primaryJurisdiction: formData.get("primaryJurisdiction") || "FR",
       activeMarkets: markets.length > 0 ? markets : ["FR"],
+      sireneAutoPrefill: formData.get("sireneAutoPrefill") === "on",
     });
     return { ok: true, message: "Paramètres enregistrés" };
   }
@@ -96,7 +97,7 @@ export default function SettingsPage() {
 
   return (
     <s-page heading="Paramètres JuriShop">
-      <fetcher.Form method="post">
+      <fetcher.Form method="post" id="settings-form">
         <input type="hidden" name="intent" value="save_settings" />
 
         <s-section heading="Profil juridique">
@@ -228,10 +229,28 @@ export default function SettingsPage() {
       <s-section slot="aside" heading="SIRENE — pré-remplissage">
         <s-paragraph color="subdued">
           Entrez votre SIRET pour importer vos informations légales depuis le
-          registre officiel. Elles pré-remplissent les modèles de mentions
-          légales et CGV dans vos recommandations (capital social et téléphone
-          restent à compléter manuellement).
+          registre officiel. Activez le pré-remplissage automatique ci-dessous
+          pour les injecter dans les modèles de mentions légales et CGV (capital
+          social et téléphone restent à compléter manuellement).
         </s-paragraph>
+        {features.sirene && (
+          <>
+            <label>
+              <input
+                form="settings-form"
+                type="checkbox"
+                name="sireneAutoPrefill"
+                defaultChecked={profile?.sireneAutoPrefill !== false}
+              />
+              {" "}
+              Pré-remplir automatiquement les modèles avec les données SIRENE
+            </label>
+            <s-paragraph color="subdued">
+              Cliquez sur « Enregistrer » en bas de page pour sauvegarder ce
+              choix.
+            </s-paragraph>
+          </>
+        )}
         {!features.sirene && (
           <s-banner tone="info">
             <s-paragraph>
@@ -259,6 +278,12 @@ export default function SettingsPage() {
             Rechercher via SIRENE
           </s-button>
         </siretFetcher.Form>
+        {features.sirene && profile?.sireneAutoPrefill === false && (
+          <s-paragraph color="subdued">
+            Le pré-remplissage automatique est désactivé — les modèles
+            conserveront les placeholders jusqu&apos;à réactivation.
+          </s-paragraph>
+        )}
         <s-paragraph color="subdued">Plan actuel : {plan}</s-paragraph>
       </s-section>
     </s-page>

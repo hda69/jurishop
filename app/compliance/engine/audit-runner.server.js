@@ -8,7 +8,8 @@ import { loadTextTemplate } from "../templates/loader.server.js";
 import { prefillTemplateBody } from "../services/template-prefill.server.js";
 import { createAlertsFromAudit } from "../services/alerts.server.js";
 import { DEFAULT_LEGAL_DISCLAIMER } from "../principles.ts";
-import { effectivePlanFromProfile } from "../../billing/plans.server.js";
+import { effectivePlanFromProfile, getPlanFeatures } from "../../billing/plans.server.js";
+import { getSirenePrefillContext } from "../services/sirene-prefill.server.js";
 
 const PACKS_DIR = join(process.cwd(), "app/compliance/rules/packs");
 
@@ -148,11 +149,14 @@ async function syncRecommendations(
     let textTemplateBody = null;
     if (data.textTemplateId) {
       const template = await loadTextTemplate(data.textTemplateId);
+      const planFeatures = getPlanFeatures(effectivePlanFromProfile(profile));
+      const sirenePrefill = planFeatures.sirene
+        ? getSirenePrefillContext(profile)
+        : { siret: null, companyData: null };
       textTemplateBody = template?.body
         ? prefillTemplateBody(template.body, {
             shop: context?.shop,
-            siret: profile?.siret,
-            companyData: profile?.companyData,
+            ...sirenePrefill,
           })
         : null;
     }
