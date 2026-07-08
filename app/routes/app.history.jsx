@@ -64,6 +64,32 @@ export default function HistoryPage() {
     }
   }, [fetcher.data, shopify]);
 
+  // Le téléchargement passe par fetch (App Bridge ajoute le jeton de session)
+  // puis un Blob : ouvrir la route dans un nouvel onglet perdrait
+  // l'authentification embarquée et afficherait une page blanche.
+  const downloadReport = async (auditId) => {
+    try {
+      const response = await fetch(`/app/report/${auditId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const html = await response.text();
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `jurishop-audit-${auditId}.html`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      shopify.toast.show("Échec du téléchargement du rapport", {
+        isError: true,
+      });
+    }
+  };
+
   return (
     <s-page heading="Historique des audits">
       <s-section heading="Évolution de la conformité">
@@ -102,8 +128,7 @@ export default function HistoryPage() {
                   </s-paragraph>
                   <s-stack direction="inline" gap="base">
                     <s-button
-                      href={`/app/report/${audit.id}`}
-                      target="_blank"
+                      onClick={() => downloadReport(audit.id)}
                       variant="secondary"
                     >
                       Télécharger le rapport
