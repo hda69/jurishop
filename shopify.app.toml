@@ -23,6 +23,10 @@ api_version = "2026-10"
   uri = "/webhooks/app/scopes_update"
   topics = [ "app/scopes_update" ]
 
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/subscriptions_update"
+  topics = [ "app_subscriptions/update" ]
+
   # NB : Shopify n'expose pas de webhook "pages/update" ni pour les politiques
   # légales. On surveille produits, thème et boutique ; les pages/politiques
   # sont revérifiées lors de l'audit manuel ou d'un changement de thème.

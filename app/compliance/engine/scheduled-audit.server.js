@@ -1,3 +1,4 @@
+import { validateAuditRequest } from "../../billing/audit-gate.server.js";
 import { runComplianceAudit } from "./audit-runner.server.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -27,6 +28,9 @@ export function daysUntilNextAudit(profile) {
 export async function runScheduledAuditIfDue(admin, shop, profile) {
   if (!profile) return { ran: false, reason: "no_profile" };
   if (!isAuditDue(profile)) return { ran: false, reason: "not_due" };
+
+  const check = await validateAuditRequest(profile, "SCHEDULED");
+  if (!check.allowed) return { ran: false, reason: "plan_limit" };
 
   await runComplianceAudit(admin, shop, { trigger: "SCHEDULED" });
   return { ran: true };

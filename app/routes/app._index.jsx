@@ -14,14 +14,21 @@ import {
   serializeProfile,
 } from "../models/compliance.server";
 import { ComplianceSummary } from "../components/RecommendationPanel";
+import { PLAN_IDS } from "../billing/plans.constants.js";
 
 export const loader = async ({ request }) => {
+  const { getPlanFeatures, PLAN_IDS: PlanIds } = await import(
+    "../billing/audit-gate.server.js"
+  );
+  const { PLAN_MARKETING } = await import("../billing/plans.server.js");
   const { admin, session } = await authenticate.admin(request);
   const shop = session.shop;
 
   const profile = await ensureAuditCurrent(admin, shop);
 
   const serialized = serializeProfile(profile);
+  const plan = serialized?.billingPlan ?? PlanIds.FREE;
+  const features = getPlanFeatures(plan);
   const alerts = await getUnreadAlerts(shop);
   const audits = await getAuditHistory(shop, 5);
   const score = computeComplianceScore(serialized);
@@ -29,6 +36,9 @@ export const loader = async ({ request }) => {
 
   return {
     profile: serialized,
+    plan,
+    planName: PLAN_MARKETING.find((p) => p.id === plan)?.name ?? plan,
+    features,
     score,
     nextAuditInDays,
     alerts: alerts.map((a) => ({
@@ -50,8 +60,16 @@ export const action = async ({ request }) => {
   const formData = await request.formData();
 
   if (formData.get("intent") === "run_audit") {
-    await runAudit(admin, session.shop, { trigger: "MANUAL" });
-    return { ok: true, message: "Audit terminé" };
+    try {
+      await runAudit(admin, session.shop, { trigger: "MANUAL" });
+      return { ok: true, message: "Audit terminé" };
+    } catch (error) {
+      return {
+        ok: false,
+        message: error.message ?? "Impossible de lancer l'audit",
+        planLimit: error.code === "PLAN_LIMIT",
+      };
+    }
   }
 
   if (formData.get("intent") === "mark_alerts_read") {
@@ -63,7 +81,7 @@ export const action = async ({ request }) => {
 };
 
 export default function Index() {
-  const { profile, score, alerts, recentAudits, nextAuditInDays } =
+  const { profile, score, alerts, recentAudits, nextAuditInDays, plan, planName, features } =
     useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
@@ -71,8 +89,10 @@ export default function Index() {
     fetcher.state !== "idle" && fetcher.formData?.get("intent") === "run_audit";
 
   useEffect(() => {
-    if (fetcher.data?.ok && fetcher.data?.message) {
-      shopify.toast.show(fetcher.data.message);
+    if (fetcher.data?.message) {
+      shopify.toast.show(fetcher.data.message, {
+        isError: fetcher.data.ok === false,
+      });
     }
   }, [fetcher.data, shopify]);
 
@@ -124,6 +144,7 @@ export default function Index() {
       <s-section heading="Score de conformité">
         <s-stack direction="inline" gap="base">
           <s-badge tone={scoreTone}>{score}/100</s-badge>
+          <s-badge>{planName}</s-badge>
           <s-text>
             Modèle {profile?.businessModel ?? "B2C"} ·{" "}
             {profile?.uiMode === "expert" ? "Mode expert" : "Mode débutant"}
@@ -201,11 +222,17 @@ export default function Index() {
           <s-paragraph color="subdued">
             {new Date(profile.lastAuditAt).toLocaleString("fr-FR")}
           </s-paragraph>
-          {profile.scheduledAuditEnabled !== false && (
+          {profile.scheduledAuditEnabled !== false && features.scheduledAudit && (
             <s-paragraph color="subdued">
               Prochain audit planifié dans {nextAuditInDays} jour
               {nextAuditInDays > 1 ? "s" : ""} (tous les{" "}
               {profile.auditIntervalDays ?? 7} jours)
+            </s-paragraph>
+          )}
+          {plan === PLAN_IDS.FREE && (
+            <s-paragraph color="subdued">
+              Plan Gratuit : 1 audit manuel par mois.{" "}
+              <s-link href="/app/plans">Voir les plans</s-link>
             </s-paragraph>
           )}
         </s-section>

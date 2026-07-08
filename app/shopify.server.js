@@ -2,10 +2,14 @@ import "@shopify/shopify-app-react-router/adapters/node";
 import {
   ApiVersion,
   AppDistribution,
+  BillingInterval,
   shopifyApp,
 } from "@shopify/shopify-app-react-router/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
+import { EXPERT_PLAN, PRO_PLAN } from "./billing/plans.server.js";
+
+export { PRO_PLAN, EXPERT_PLAN };
 
 function resolveAppUrl() {
   if (process.env.SHOPIFY_APP_URL) {
@@ -36,6 +40,28 @@ const shopify = shopifyApp({
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
+  billing: {
+    [PRO_PLAN]: {
+      trialDays: 14,
+      lineItems: [
+        {
+          amount: 24,
+          currencyCode: "EUR",
+          interval: BillingInterval.Every30Days,
+        },
+      ],
+    },
+    [EXPERT_PLAN]: {
+      trialDays: 14,
+      lineItems: [
+        {
+          amount: 59,
+          currencyCode: "EUR",
+          interval: BillingInterval.Every30Days,
+        },
+      ],
+    },
+  },
   future: {
     expiringOfflineAccessTokens: true,
   },

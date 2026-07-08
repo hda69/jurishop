@@ -14,11 +14,16 @@ import {
 } from "../models/compliance.server";
 
 export const loader = async ({ request }) => {
+  const { getPlanFeatures, PLAN_IDS } = await import(
+    "../billing/audit-gate.server.js"
+  );
   const { session } = await authenticate.admin(request);
   await ensureShopProfile(session.shop);
   const profile = serializeProfile(await getShopProfile(session.shop));
+  const plan = profile?.billingPlan ?? PLAN_IDS.FREE;
+  const features = getPlanFeatures(plan);
   const score = computeComplianceScore(profile);
-  return { profile, score, badgeSnippet: getBadgeSnippet(profile, score) };
+  return { profile, score, badgeSnippet: getBadgeSnippet(profile, score), plan, features };
 };
 
 export const action = async ({ request }) => {
@@ -57,7 +62,7 @@ export const action = async ({ request }) => {
 };
 
 export default function SettingsPage() {
-  const { profile, score, badgeSnippet } = useLoaderData();
+  const { profile, score, badgeSnippet, plan, features } = useLoaderData();
   const fetcher = useFetcher();
   const siretFetcher = useFetcher();
   const shopify = useAppBridge();
@@ -102,7 +107,9 @@ export default function SettingsPage() {
               <br />
               <select name="uiMode" defaultValue={profile?.uiMode ?? "beginner"}>
                 <option value="beginner">Débutant</option>
-                <option value="expert">Expert (références légales)</option>
+                <option value="expert" disabled={!features.expertMode}>
+                  Expert (références légales){!features.expertMode ? " — plan Expert" : ""}
+                </option>
               </select>
             </label>
 
@@ -115,14 +122,28 @@ export default function SettingsPage() {
               </label>
               <br />
               <label>
-                <input type="checkbox" name="markets" value="EU" defaultChecked={markets.includes("EU")} />
-                {" "}Union européenne
+                <input
+                  type="checkbox"
+                  name="markets"
+                  value="EU"
+                  defaultChecked={markets.includes("EU")}
+                  disabled={!features.euPack}
+                />
+                {" "}Union européenne{!features.euPack ? " (plan Pro)" : ""}
               </label>
             </div>
           </s-stack>
         </s-section>
 
         <s-section heading="Audit planifié">
+          {!features.scheduledAudit && (
+            <s-banner tone="info">
+              <s-paragraph>
+                L&apos;audit planifié est disponible à partir du plan Pro.{" "}
+                <s-link href="/app/plans">Voir les plans</s-link>
+              </s-paragraph>
+            </s-banner>
+          )}
           <s-paragraph>
             Compense l&apos;absence de webhooks pour les pages et politiques
             légales. Vérifie automatiquement votre conformité à intervalle
@@ -133,6 +154,7 @@ export default function SettingsPage() {
               type="checkbox"
               name="scheduledAuditEnabled"
               defaultChecked={profile?.scheduledAuditEnabled !== false}
+              disabled={!features.scheduledAudit}
             />
             {" "}Activer l&apos;audit planifié
           </label>
@@ -195,6 +217,14 @@ export default function SettingsPage() {
       </fetcher.Form>
 
       <s-section slot="aside" heading="SIRENE — pré-remplissage">
+        {!features.sirene && (
+          <s-banner tone="info">
+            <s-paragraph>
+              La recherche SIRENE est incluse dans le plan Expert.{" "}
+              <s-link href="/app/plans">Passer au plan Expert</s-link>
+            </s-paragraph>
+          </s-banner>
+        )}
         {profile?.companyData && (
           <s-banner tone="success" heading={profile.companyData.denomination}>
             <s-paragraph>SIRET {profile.siret}</s-paragraph>
@@ -203,11 +233,17 @@ export default function SettingsPage() {
         )}
         <siretFetcher.Form method="post">
           <input type="hidden" name="intent" value="lookup_siret" />
-          <s-text-field label="SIRET" name="siret" value={profile?.siret ?? ""} />
-          <s-button type="submit" variant="secondary">
+          <s-text-field
+            label="SIRET"
+            name="siret"
+            value={profile?.siret ?? ""}
+            disabled={!features.sirene}
+          />
+          <s-button type="submit" variant="secondary" disabled={!features.sirene}>
             Rechercher via SIRENE
           </s-button>
         </siretFetcher.Form>
+        <s-paragraph color="subdued">Plan actuel : {plan}</s-paragraph>
       </s-section>
     </s-page>
   );

@@ -95,9 +95,25 @@ function filterRulesForProfile(rules, profile) {
   });
 }
 
-function resolveJurisdictions(activeMarkets) {
-  const set = new Set(activeMarkets);
-  if (set.has("FR")) set.add("EU");
+function resolveJurisdictions(activeMarkets, billingPlan = "FREE") {
+  const features =
+    billingPlan === "EXPERT"
+      ? { euPack: true, multiMarkets: true }
+      : billingPlan === "PRO"
+        ? { euPack: true, multiMarkets: false }
+        : { euPack: false, multiMarkets: false };
+
+  let markets = [...activeMarkets];
+  if (!features.euPack) {
+    markets = markets.filter((m) => m !== "EU");
+  }
+  if (!features.multiMarkets) {
+    markets = markets.filter((m) => m === "FR" || m === "EU");
+  }
+  if (markets.length === 0) markets = ["FR"];
+
+  const set = new Set(markets);
+  if (set.has("FR") && features.euPack) set.add("EU");
   return [...set];
 }
 
@@ -210,6 +226,7 @@ export async function runComplianceAudit(admin, shop, { trigger = "MANUAL" } = {
 
   const jurisdictions = resolveJurisdictions(
     JSON.parse(profile.activeMarkets || '["FR"]'),
+    profile.billingPlan ?? "FREE",
   );
   const packs = await loadRulePacks(jurisdictions);
   const allRules = flattenRules(packs);

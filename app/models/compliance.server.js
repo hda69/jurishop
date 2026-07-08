@@ -13,6 +13,13 @@ import {
   daysUntilNextAudit,
   runScheduledAuditIfDue,
 } from "../compliance/engine/scheduled-audit.server.js";
+import {
+  assertPlanFeature,
+  afterAuditRecorded,
+  getPlanFeatures,
+  PLAN_IDS,
+  validateAuditRequest,
+} from "../billing/audit-gate.server.js";
 
 export async function ensureShopProfile(shop) {
   return prisma.shopComplianceProfile.upsert({
@@ -27,7 +34,19 @@ export async function ensureShopProfile(shop) {
 }
 
 export async function runAudit(admin, shop, options = {}) {
-  return runComplianceAudit(admin, shop, options);
+  const profile = await ensureShopProfile(shop);
+  const trigger = options.trigger ?? "MANUAL";
+
+  const check = await validateAuditRequest(profile, trigger);
+  if (!check.allowed) {
+    const error = new Error(check.reason);
+    error.code = "PLAN_LIMIT";
+    throw error;
+  }
+
+  const result = await runComplianceAudit(admin, shop, options);
+  await afterAuditRecorded(shop, trigger);
+  return result;
 }
 
 /** Premier audit ou audit planifié si l'intervalle est dépassé. */
@@ -46,48 +65,90 @@ export async function ensureAuditCurrent(admin, shop) {
   return profile;
 }
 
+function enforceSettingsForPlan(plan, settings) {
+  const features = getPlanFeatures(plan);
+  const next = { ...settings };
+
+  if (!features.scheduledAudit) {
+    next.scheduledAuditEnabled = false;
+  }
+  if (!features.expertMode && next.uiMode === "expert") {
+    next.uiMode = "beginner";
+  }
+  if (!features.multiMarkets) {
+    const markets = next.activeMarkets ?? ["FR"];
+    next.activeMarkets = markets.filter((m) => m === "FR" || m === "EU");
+    if (!features.euPack) {
+      next.activeMarkets = ["FR"];
+    }
+  }
+
+  return next;
+}
+
 export async function getShopProfile(shop) {
   return prisma.shopComplianceProfile.findUnique({ where: { shop } });
 }
 
 export async function updateShopSettings(shop, settings) {
   const profile = await ensureShopProfile(shop);
+  const plan = profile.billingPlan ?? PLAN_IDS.FREE;
+  const gated = enforceSettingsForPlan(plan, settings);
+
+  if (gated.uiMode === "expert") {
+    const check = assertPlanFeature(plan, "expertMode");
+    if (!check.allowed) throw new Error(check.reason);
+  }
+  if (gated.scheduledAuditEnabled) {
+    const check = assertPlanFeature(plan, "scheduledAudit");
+    if (!check.allowed) throw new Error(check.reason);
+  }
+  const markets = gated.activeMarkets ?? JSON.parse(profile.activeMarkets);
+  if (markets.includes("EU")) {
+    const check = assertPlanFeature(plan, "euPack");
+    if (!check.allowed) throw new Error(check.reason);
+  }
+
   return prisma.shopComplianceProfile.update({
     where: { id: profile.id },
     data: {
-      businessModel: settings.businessModel ?? profile.businessModel,
-      uiMode: settings.uiMode ?? profile.uiMode,
-      alertEmail: settings.alertEmail ?? profile.alertEmail,
+      businessModel: gated.businessModel ?? profile.businessModel,
+      uiMode: gated.uiMode ?? profile.uiMode,
+      alertEmail: gated.alertEmail ?? profile.alertEmail,
       alertsEnabled:
-        settings.alertsEnabled !== undefined
-          ? settings.alertsEnabled
+        gated.alertsEnabled !== undefined
+          ? gated.alertsEnabled
           : profile.alertsEnabled,
       badgeEnabled:
-        settings.badgeEnabled !== undefined
-          ? settings.badgeEnabled
+        gated.badgeEnabled !== undefined
+          ? gated.badgeEnabled
           : profile.badgeEnabled,
-      siret: settings.siret ?? profile.siret,
-      activeMarkets: settings.activeMarkets
-        ? JSON.stringify(settings.activeMarkets)
+      siret: gated.siret ?? profile.siret,
+      activeMarkets: gated.activeMarkets
+        ? JSON.stringify(gated.activeMarkets)
         : profile.activeMarkets,
       primaryJurisdiction:
-        settings.primaryJurisdiction ?? profile.primaryJurisdiction,
-      companyData: settings.companyData ?? profile.companyData,
+        gated.primaryJurisdiction ?? profile.primaryJurisdiction,
+      companyData: gated.companyData ?? profile.companyData,
       scheduledAuditEnabled:
-        settings.scheduledAuditEnabled !== undefined
-          ? settings.scheduledAuditEnabled
+        gated.scheduledAuditEnabled !== undefined
+          ? gated.scheduledAuditEnabled
           : profile.scheduledAuditEnabled,
       auditIntervalDays:
-        settings.auditIntervalDays !== undefined
-          ? settings.auditIntervalDays
+        gated.auditIntervalDays !== undefined
+          ? gated.auditIntervalDays
           : profile.auditIntervalDays,
     },
   });
 }
 
 export async function lookupAndSaveSiret(shop, siret) {
-  const company = await fetchCompanyBySiret(siret);
   const profile = await ensureShopProfile(shop);
+  const plan = profile.billingPlan ?? PLAN_IDS.FREE;
+  const check = assertPlanFeature(plan, "sirene");
+  if (!check.allowed) throw new Error(check.reason);
+
+  const company = await fetchCompanyBySiret(siret);
   return prisma.shopComplianceProfile.update({
     where: { id: profile.id },
     data: {
@@ -97,14 +158,18 @@ export async function lookupAndSaveSiret(shop, siret) {
   });
 }
 
-export async function getAuditHistory(shop, limit = 10) {
+export async function getAuditHistory(shop, limit) {
   const profile = await getShopProfile(shop);
   if (!profile) return [];
+
+  const plan = profile.billingPlan ?? PLAN_IDS.FREE;
+  const features = getPlanFeatures(plan);
+  const take = limit ?? features.historyLimit;
 
   return prisma.complianceAudit.findMany({
     where: { shopId: profile.id, status: "COMPLETED" },
     orderBy: { startedAt: "desc" },
-    take: limit,
+    take,
   });
 }
 
@@ -126,6 +191,11 @@ export async function getAuditWithResults(shop, auditId) {
 }
 
 export async function exportAuditReport(shop, auditId) {
+  const profile = await getShopProfile(shop);
+  const plan = profile?.billingPlan ?? PLAN_IDS.FREE;
+  const check = assertPlanFeature(plan, "htmlReports");
+  if (!check.allowed) throw new Error(check.reason);
+
   const data = await getAuditWithResults(shop, auditId);
   if (!data) throw new Response("Audit introuvable", { status: 404 });
   return generateAuditReportHtml({ shop, ...data });
@@ -134,6 +204,10 @@ export async function exportAuditReport(shop, auditId) {
 export async function createShareLink(shop, auditId) {
   const profile = await getShopProfile(shop);
   if (!profile) throw new Response("Not found", { status: 404 });
+
+  const plan = profile.billingPlan ?? PLAN_IDS.FREE;
+  const check = assertPlanFeature(plan, "shareLinks");
+  if (!check.allowed) throw new Error(check.reason);
 
   const audit = await prisma.complianceAudit.findFirst({
     where: { id: auditId, shopId: profile.id },

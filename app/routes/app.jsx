@@ -20,6 +20,7 @@ export default function App() {
         <s-link href="/app/recommendations">Recommandations</s-link>
         <s-link href="/app/history">Historique</s-link>
         <s-link href="/app/settings">Paramètres</s-link>
+        <s-link href="/app/plans">Abonnement</s-link>
       </s-app-nav>
       <Outlet />
     </AppProvider>

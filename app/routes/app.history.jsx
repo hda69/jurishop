@@ -18,11 +18,18 @@ const STATUS_LABEL = {
 };
 
 export const loader = async ({ request }) => {
+  const { getPlanFeatures, PLAN_IDS } = await import(
+    "../billing/audit-gate.server.js"
+  );
   const { session } = await authenticate.admin(request);
   const profile = serializeProfile(await getShopProfile(session.shop));
-  const audits = await getAuditHistory(session.shop, 15);
+  const plan = profile?.billingPlan ?? PLAN_IDS.FREE;
+  const features = getPlanFeatures(plan);
+  const audits = await getAuditHistory(session.shop);
   return {
     profile,
+    plan,
+    features,
     audits: audits.map((a) => ({
       ...a,
       startedAt: a.startedAt.toISOString(),
@@ -53,7 +60,7 @@ export const action = async ({ request }) => {
 };
 
 export default function HistoryPage() {
-  const { audits } = useLoaderData();
+  const { audits, features } = useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
 
@@ -127,19 +134,31 @@ export default function HistoryPage() {
                     {audit.rulesWarning} avertissements
                   </s-paragraph>
                   <s-stack direction="inline" gap="base">
-                    <s-button
-                      onClick={() => downloadReport(audit.id)}
-                      variant="secondary"
-                    >
-                      Télécharger le rapport
-                    </s-button>
-                    <fetcher.Form method="post">
-                      <input type="hidden" name="intent" value="share" />
-                      <input type="hidden" name="auditId" value={audit.id} />
-                      <s-button type="submit" variant="tertiary">
-                        Partager avec mon conseiller
+                    {features.htmlReports ? (
+                      <s-button
+                        onClick={() => downloadReport(audit.id)}
+                        variant="secondary"
+                      >
+                        Télécharger le rapport
                       </s-button>
-                    </fetcher.Form>
+                    ) : (
+                      <s-button href="/app/plans" variant="secondary">
+                        Rapport HTML (plan Pro)
+                      </s-button>
+                    )}
+                    {features.shareLinks ? (
+                      <fetcher.Form method="post">
+                        <input type="hidden" name="intent" value="share" />
+                        <input type="hidden" name="auditId" value={audit.id} />
+                        <s-button type="submit" variant="tertiary">
+                          Partager avec mon conseiller
+                        </s-button>
+                      </fetcher.Form>
+                    ) : (
+                      <s-button href="/app/plans" variant="tertiary">
+                        Partage conseiller (plan Pro)
+                      </s-button>
+                    )}
                   </s-stack>
                 </s-stack>
               </s-box>

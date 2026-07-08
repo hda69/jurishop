@@ -78,6 +78,13 @@ model ShopComplianceProfile {
   scheduledAuditEnabled Boolean @default(true)
   auditIntervalDays     Int     @default(7)
 
+  // Abonnement Shopify Billing API
+  billingPlan               String  @default("FREE") // FREE | PRO | EXPERT
+  billingSubscriptionId     String?
+  billingSubscriptionStatus String?
+  manualAuditsThisMonth     Int     @default(0)
+  manualAuditsMonthKey      String? // ex. "2026-07"
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
