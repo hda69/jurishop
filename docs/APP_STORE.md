@@ -45,24 +45,29 @@ JuriShop n’ajoute pas de case à cocher checkout, pop-ups, couleurs ni polices
 
 ### Compliance — Conformité
 
-**Minimum 1 tag obligatoire.** Cochez uniquement les domaines que l’app **audite** :
+**Minimum 1 tag obligatoire.** Liste exacte du formulaire Partner Dashboard :
 
-| Tag (si présent dans la liste) | Cocher ? | Pourquoi |
-|--------------------------------|----------|----------|
-| **Terms and conditions** / CGV / conditions générales | ✅ Oui | Règles CGV + contenu (FR, BE, CH, LU) |
-| **Privacy policy** / RGPD / GDPR / confidentialité | ✅ Oui | Politiques + pages confidentialité |
-| **Cookie consent** / cookies / consentement | ✅ Oui | Détection CMP + checklist (audit, pas installation) |
-| **Legal notices** / mentions légales | ✅ Oui | Mentions légales + contenu obligatoire |
-| **Consumer rights** / droits consommateurs / rétractation | ✅ Oui | Rétractation, médiation, droits consommateur |
-| **Pricing** / prix / transparence tarifaire / Omnibus | ✅ Oui | Prix barrés + directive Omnibus |
-| **Product warnings** / avertissements produits | ⚠️ Optionnel | Uniquement si vous l’associez à l’Omnibus / info prix produit |
-| **Accessibility** / accessibilité | ❌ Non | Pas d’audit WCAG / ADA dans JuriShop |
-| **Age verification** / vérification de l’âge | ❌ Non | Pas de contrôle d’âge ni de gate 18+ |
+| Tag | Cocher ? | Justification |
+|-----|----------|---------------|
+| **CGU** | ✅ **Oui** | Audit CGV/conditions générales + modèles de textes |
+| **Confidentialité des données** | ✅ **Oui** | RGPD, politique de confidentialité, cookies |
+| **Rapport de conformité** | ✅ **Oui** | Score /100, rapports HTML, historique, partage conseiller |
+| **Avertissement produit** | ✅ **Oui** | Prix barrés, directive Omnibus, cohérence promo/produit |
+| **Gestion de politiques** | ⚠️ **Optionnel** | Vérifie les politiques Shopify + modèles — pas de publication auto. Cocher si vous voulez apparaître sur cette recherche ; sinon laisser décoché pour rester strict |
+| **Accessibilité** | ❌ Non | Pas d’audit WCAG / ADA |
+| **Conformité fiscale** | ❌ Non | Pas de contrôle TVA/fiscalité |
+| **Conformité TSE** | ❌ Non | Hors périmètre JuriShop |
+| **Exonérations fiscales** | ❌ Non | Hors périmètre JuriShop |
+| **Vérif. de l’âge** | ❌ Non | Pas de gate 18+ ni contrôle d’âge |
 
-**Sélection minimale recommandée (3–5 tags)**  
-CGV · Politique de confidentialité / RGPD · Cookies · Mentions légales · (optionnel) Droits consommateurs ou Prix/Omnibus
+**Recommandation (sélection sûre pour la review)** — 4 tags :
 
-**Ne pas sur-cocher** : la review Shopify vérifie que les tags correspondent à l’app. Mieux vaut 4 tags précis que 15 approximatifs.
+1. CGU  
+2. Confidentialité des données  
+3. Rapport de conformité  
+4. Avertissement produit  
+
+**+ optionnel** : Gestion de politiques (si vous assumez le libellé « gestion » = audit + modèles, pas édition automatique).
 
 ---
 
