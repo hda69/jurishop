@@ -102,46 +102,44 @@ export default function SettingsPage() {
 
         <s-section heading="Profil juridique">
           <s-stack direction="block" gap="base">
-            <label>
-              Modèle commercial
-              <br />
-              <select name="businessModel" defaultValue={profile?.businessModel ?? "B2C"}>
-                <option value="B2C">B2C — Vente aux particuliers</option>
-                <option value="B2B">B2B — Vente aux professionnels</option>
-                <option value="MIXED">Mixte B2B + B2C</option>
-              </select>
-            </label>
+            <s-select
+              label="Modèle commercial"
+              name="businessModel"
+              value={profile?.businessModel ?? "B2C"}
+              details="Détermine quelles obligations consommateur s'appliquent à votre boutique."
+            >
+              <s-option value="B2C">B2C — Vente aux particuliers</s-option>
+              <s-option value="B2B">B2B — Vente aux professionnels</s-option>
+              <s-option value="MIXED">Mixte B2B + B2C</s-option>
+            </s-select>
 
-            <label>
-              Mode d&apos;affichage
-              <br />
-              <select name="uiMode" defaultValue={profile?.uiMode ?? "beginner"}>
-                <option value="beginner">Débutant</option>
-                <option value="expert" disabled={!features.expertMode}>
-                  Expert (références légales){!features.expertMode ? " — plan Expert" : ""}
-                </option>
-              </select>
-            </label>
+            <s-choice-list
+              label="Mode d'affichage"
+              name="uiMode"
+              values={[profile?.uiMode ?? "beginner"]}
+              details="Le mode Expert affiche les références légales dans l'app et les rapports."
+            >
+              <s-choice value="beginner">
+                Débutant — explications simplifiées
+              </s-choice>
+              <s-choice value="expert" disabled={!features.expertMode}>
+                Expert — références légales détaillées
+                {!features.expertMode ? " (plan Expert)" : ""}
+              </s-choice>
+            </s-choice-list>
 
-            <div>
-              <s-text type="strong">Marchés audités</s-text>
-              <br />
-              <label>
-                <input type="checkbox" name="markets" value="FR" defaultChecked={markets.includes("FR")} />
-                {" "}France
-              </label>
-              <br />
-              <label>
-                <input
-                  type="checkbox"
-                  name="markets"
-                  value="EU"
-                  defaultChecked={markets.includes("EU")}
-                  disabled={!features.euPack}
-                />
-                {" "}Union européenne{!features.euPack ? " (plan Pro)" : ""}
-              </label>
-            </div>
+            <s-choice-list
+              label="Marchés audités"
+              name="markets"
+              multiple
+              values={markets}
+              details="Les règles de conformité sont appliquées selon les marchés sélectionnés."
+            >
+              <s-choice value="FR">France</s-choice>
+              <s-choice value="EU" disabled={!features.euPack}>
+                Union européenne{!features.euPack ? " (plan Pro)" : ""}
+              </s-choice>
+            </s-choice-list>
           </s-stack>
         </s-section>
 
@@ -159,66 +157,64 @@ export default function SettingsPage() {
             légales. Vérifie automatiquement votre conformité à intervalle
             régulier.
           </s-paragraph>
-          <label>
-            <input
-              type="checkbox"
+          <s-stack direction="block" gap="base">
+            <s-switch
+              label="Activer l'audit planifié"
               name="scheduledAuditEnabled"
-              defaultChecked={profile?.scheduledAuditEnabled !== false}
+              value="on"
+              checked={profile?.scheduledAuditEnabled !== false}
               disabled={!features.scheduledAudit}
             />
-            {" "}Activer l&apos;audit planifié
-          </label>
-          <br />
-          <label>
-            Intervalle (jours)
-            <br />
-            <select
+            <s-select
+              label="Fréquence de l'audit"
               name="auditIntervalDays"
-              defaultValue={String(profile?.auditIntervalDays ?? 7)}
+              value={String(profile?.auditIntervalDays ?? 7)}
+              disabled={!features.scheduledAudit}
+              details="Fréquence à laquelle JuriShop relance un audit automatique."
             >
-              <option value="1">Tous les jours</option>
-              <option value="3">Tous les 3 jours</option>
-              <option value="7">Toutes les semaines</option>
-              <option value="14">Toutes les 2 semaines</option>
-              <option value="30">Tous les mois</option>
-            </select>
-          </label>
+              <s-option value="1">Tous les jours</s-option>
+              <s-option value="3">Tous les 3 jours</s-option>
+              <s-option value="7">Toutes les semaines</s-option>
+              <s-option value="14">Toutes les 2 semaines</s-option>
+              <s-option value="30">Tous les mois</s-option>
+            </s-select>
+          </s-stack>
         </s-section>
 
         <s-section heading="Alertes">
-          <s-text-field
-            label="Email d'alerte (futur)"
-            name="alertEmail"
-            value={profile?.alertEmail ?? ""}
-          />
-          <label>
-            <input
-              type="checkbox"
-              name="alertsEnabled"
-              defaultChecked={profile?.alertsEnabled !== false}
+          <s-stack direction="block" gap="base">
+            <s-text-field
+              label="Email d'alerte (futur)"
+              name="alertEmail"
+              value={profile?.alertEmail ?? ""}
             />
-            {" "}Alertes in-app lors des régressions
-          </label>
+            <s-switch
+              label="Alertes in-app lors des régressions"
+              name="alertsEnabled"
+              value="on"
+              checked={profile?.alertsEnabled !== false}
+            />
+          </s-stack>
         </s-section>
 
         <s-section heading="Badge conformité">
-          <s-paragraph>
-            Score : <s-text type="strong">{score}/100</s-text>
-            {score >= 80 ? " — badge disponible" : " — minimum 80 requis"}
-          </s-paragraph>
-          <label>
-            <input
-              type="checkbox"
+          <s-stack direction="block" gap="base">
+            <s-paragraph>
+              Score : <s-text type="strong">{score}/100</s-text>
+              {score >= 80 ? " — badge disponible" : " — minimum 80 requis"}
+            </s-paragraph>
+            <s-switch
+              label="Activer le badge JuriShop"
               name="badgeEnabled"
-              defaultChecked={profile?.badgeEnabled === true}
+              value="on"
+              checked={profile?.badgeEnabled === true}
             />
-            {" "}Activer le badge JuriShop
-          </label>
-          {badgeSnippet && (
-            <s-button type="button" onClick={copyBadge}>
-              Copier le code HTML
-            </s-button>
-          )}
+            {badgeSnippet && (
+              <s-button type="button" onClick={copyBadge}>
+                Copier le code HTML
+              </s-button>
+            )}
+          </s-stack>
         </s-section>
 
         <s-button variant="primary" type="submit">
@@ -235,16 +231,13 @@ export default function SettingsPage() {
         </s-paragraph>
         {features.sirene && (
           <>
-            <label>
-              <input
-                form="settings-form"
-                type="checkbox"
-                name="sireneAutoPrefill"
-                defaultChecked={profile?.sireneAutoPrefill !== false}
-              />
-              {" "}
-              Pré-remplir automatiquement les modèles avec les données SIRENE
-            </label>
+            <s-checkbox
+              form="settings-form"
+              label="Pré-remplir automatiquement les modèles avec les données SIRENE"
+              name="sireneAutoPrefill"
+              value="on"
+              checked={profile?.sireneAutoPrefill !== false}
+            />
             <s-paragraph color="subdued">
               Cliquez sur « Enregistrer » en bas de page pour sauvegarder ce
               choix.
