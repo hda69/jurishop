@@ -39,8 +39,8 @@ const APPS_QUERY = `#graphql
   }
 `;
 
-const AUDIT_CONTEXT_QUERY = `#graphql
-  query JuriShopAuditContext($productsFirst: Int!) {
+const SHOP_QUERY = `#graphql
+  query JuriShopShop {
     shop {
       name
       email
@@ -48,27 +48,54 @@ const AUDIT_CONTEXT_QUERY = `#graphql
       myshopifyDomain
       currencyCode
       primaryDomain { url }
-      billingAddress {
+      shopAddress {
         company address1 city zip countryCodeV2
       }
-      plan { displayName }
+      plan { publicDisplayName }
       shopPolicies { type title body url }
     }
+  }
+`;
+
+const PAGES_QUERY = `#graphql
+  query JuriShopPages {
     pages(first: 50) {
       nodes { id title handle body isPublished }
     }
+  }
+`;
+
+const MARKETS_QUERY = `#graphql
+  query JuriShopMarkets {
     markets(first: 20) {
       nodes {
-        id name enabled
-        regions(first: 20) { nodes { code name } }
+        id
+        name
+        status
+        regions(first: 20) {
+          nodes {
+            name
+            ... on MarketRegionCountry { code }
+          }
+        }
       }
     }
-    products(first: $productsFirst, query: "compare_at_price:>0") {
+  }
+`;
+
+const PRODUCTS_QUERY = `#graphql
+  query JuriShopProducts($productsFirst: Int!) {
+    products(first: $productsFirst) {
       nodes {
         id title handle
         variants(first: 5) { nodes { price compareAtPrice } }
       }
     }
+  }
+`;
+
+const THEMES_QUERY = `#graphql
+  query JuriShopThemes {
     themes(first: 1, roles: [MAIN]) {
       nodes { id name role }
     }
@@ -124,20 +151,55 @@ async function fetchInstalledApps(admin) {
   }
 }
 
+/**
+ * Exécute une requête GraphQL isolée en lecture seule.
+ * En cas d'erreur (champ invalide, 5xx Shopify…), on journalise et on
+ * renvoie `null` pour que l'audit continue avec les autres sections.
+ */
+async function runQuery(admin, label, query, variables) {
+  assertReadOnlyGraphQLOperation("query");
+  try {
+    const response = await admin.graphql(query, variables ? { variables } : undefined);
+    const { data, errors } = await response.json();
+    if (errors?.length) {
+      console.warn(
+        `[JuriShop] GraphQL "${label}" : ${errors.map((e) => e.message).join(", ")}`,
+      );
+      return data ?? null;
+    }
+    return data ?? null;
+  } catch (error) {
+    console.warn(`[JuriShop] GraphQL "${label}" a échoué :`, error?.message ?? error);
+    return null;
+  }
+}
+
 /** Charge le contexte Shopify complet en lecture seule. */
 export async function buildShopAuditContext(admin, { productsFirst = 50 } = {}) {
   assertReadOnlyGraphQLOperation("query");
 
-  const response = await admin.graphql(AUDIT_CONTEXT_QUERY, {
-    variables: { productsFirst },
-  });
-  const { data, errors } = await response.json();
+  const [shopData, pagesData, marketsData, productsData, themesData] =
+    await Promise.all([
+      runQuery(admin, "shop", SHOP_QUERY),
+      runQuery(admin, "pages", PAGES_QUERY),
+      runQuery(admin, "markets", MARKETS_QUERY),
+      runQuery(admin, "products", PRODUCTS_QUERY, { productsFirst }),
+      runQuery(admin, "themes", THEMES_QUERY),
+    ]);
 
-  if (errors?.length) {
+  if (!shopData?.shop) {
     throw new Error(
-      `Erreur GraphQL : ${errors.map((e) => e.message).join(", ")}`,
+      "Impossible de charger les informations de la boutique (requête shop en échec).",
     );
   }
+
+  const data = {
+    shop: shopData.shop,
+    pages: pagesData?.pages,
+    markets: marketsData?.markets,
+    products: productsData?.products,
+    themes: themesData?.themes,
+  };
 
   const shop = data.shop;
   const mainTheme = data.themes?.nodes?.[0];
@@ -159,9 +221,11 @@ export async function buildShopAuditContext(admin, { productsFirst = 50 } = {}) 
       contactEmail: shop.contactEmail,
       myshopifyDomain: shop.myshopifyDomain,
       primaryDomain: shop.primaryDomain,
-      billingAddress: shop.billingAddress,
+      billingAddress: shop.shopAddress,
       currencyCode: shop.currencyCode,
-      plan: shop.plan,
+      plan: shop.plan
+        ? { displayName: shop.plan.publicDisplayName }
+        : null,
     },
     pages: (data.pages?.nodes ?? []).map((page) => ({
       id: page.id,
@@ -179,11 +243,13 @@ export async function buildShopAuditContext(admin, { productsFirst = 50 } = {}) 
     markets: (data.markets?.nodes ?? []).map((market) => ({
       id: market.id,
       name: market.name,
-      enabled: market.enabled,
-      regions: (market.regions?.nodes ?? []).map((r) => ({
-        code: r.code,
-        name: r.name,
-      })),
+      enabled: market.status === "ACTIVE",
+      regions: (market.regions?.nodes ?? [])
+        .filter((r) => r.code)
+        .map((r) => ({
+          code: r.code,
+          name: r.name,
+        })),
     })),
     productsWithCompareAt: flattenProducts(data.products?.nodes),
     themeFiles,

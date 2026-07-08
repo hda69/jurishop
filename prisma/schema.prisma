@@ -1,13 +1,13 @@
-// JuriShop — schéma de conformité légale
-// Compatible Prisma 6 (actuel) et migration Prisma 7 (prisma.config.ts + driver adapter)
+// JuriShop — schéma de conformité légale (PostgreSQL)
+// DATABASE_URL requis — voir .env.example
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:dev.sqlite"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ─── Shopify session (template) ───────────────────────────────────────────────
