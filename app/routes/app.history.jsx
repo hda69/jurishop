@@ -85,78 +85,122 @@ export const action = async ({ request }) => {
   return { ok: false };
 };
 
+function scoreColor(score) {
+  if (score >= 80) return "#29845a";
+  if (score >= 50) return "#b98900";
+  return "#e51c00";
+}
+
 function ScoreChart({ audits }) {
   if (audits.length === 0) return null;
   const ordered = [...audits].reverse().slice(-10);
-  const chartHeight = 100;
+  const width = 400;
+  const height = 160;
+  const pad = { top: 12, right: 16, bottom: 32, left: 36 };
+  const plotW = width - pad.left - pad.right;
+  const plotH = height - pad.top - pad.bottom;
+  const count = ordered.length;
+  const gap = 10;
+  const barW = Math.min(40, (plotW - gap * (count - 1)) / count);
+  const totalBarsW = count * barW + gap * (count - 1);
+  const offsetX = pad.left + (plotW - totalBarsW) / 2;
+
+  const points = ordered.map((audit, i) => {
+    const x = offsetX + i * (barW + gap) + barW / 2;
+    const barH = Math.max(4, (audit.score / 100) * plotH);
+    const y = pad.top + plotH - barH;
+    return { audit, x, y, barH, barX: offsetX + i * (barW + gap) };
+  });
 
   return (
     <s-box padding="base" borderWidth="base" borderRadius="base">
       <s-text type="strong">Évolution du score (/100)</s-text>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          gap: "8px",
-          marginTop: "12px",
-        }}
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label="Graphique d'évolution du score de conformité"
+        style={{ width: "100%", maxWidth: 520, height: "auto", marginTop: 12, display: "block" }}
       >
-        {ordered.map((audit) => {
-          const barHeight = Math.max(
-            6,
-            Math.round((audit.score / 100) * chartHeight),
-          );
-          const color =
-            audit.score >= 80
-              ? "#29845a"
-              : audit.score >= 50
-                ? "#b98900"
-                : "#e51c00";
-
+        {[0, 50, 100].map((tick) => {
+          const y = pad.top + plotH - (tick / 100) * plotH;
           return (
-            <div
-              key={audit.id}
-              style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                height: `${chartHeight + 40}px`,
-                minWidth: 0,
-              }}
-              title={`${new Date(audit.startedAt).toLocaleDateString("fr-FR")} — ${audit.score}/100`}
-            >
-              <div
-                style={{
-                  width: "100%",
-                  maxWidth: 56,
-                  height: `${barHeight}px`,
-                  background: color,
-                  borderRadius: "4px 4px 0 0",
-                }}
+            <g key={tick}>
+              <line
+                x1={pad.left}
+                y1={y}
+                x2={width - pad.right}
+                y2={y}
+                stroke="#e3e3e3"
+                strokeWidth={1}
               />
-              <span
-                style={{ fontSize: "11px", fontWeight: 600, marginTop: 4 }}
+              <text
+                x={pad.left - 8}
+                y={y + 4}
+                textAnchor="end"
+                fontSize={10}
+                fill="#6d7175"
               >
-                {audit.score}
-              </span>
-              <span
-                style={{
-                  fontSize: "10px",
-                  color: "#6d7175",
-                  textAlign: "center",
-                }}
-              >
-                {new Date(audit.startedAt).toLocaleDateString("fr-FR", {
-                  day: "numeric",
-                  month: "short",
-                })}
-              </span>
-            </div>
+                {tick}
+              </text>
+            </g>
           );
         })}
-      </div>
+
+        <line
+          x1={pad.left}
+          y1={pad.top + plotH}
+          x2={width - pad.right}
+          y2={pad.top + plotH}
+          stroke="#8a8a8a"
+          strokeWidth={1}
+        />
+
+        {points.length > 1 && (
+          <polyline
+            fill="none"
+            stroke="#2c6ecb"
+            strokeWidth={2}
+            strokeLinejoin="round"
+            points={points.map((p) => `${p.x},${p.y}`).join(" ")}
+          />
+        )}
+
+        {points.map(({ audit, barX, y, barH, x }) => (
+          <g key={audit.id}>
+            <rect
+              x={barX}
+              y={y}
+              width={barW}
+              height={barH}
+              fill={scoreColor(audit.score)}
+              rx={3}
+            />
+            <circle cx={x} cy={y} r={3} fill="#2c6ecb" />
+            <text
+              x={x}
+              y={height - 10}
+              textAnchor="middle"
+              fontSize={10}
+              fill="#6d7175"
+            >
+              {new Date(audit.startedAt).toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "short",
+              })}
+            </text>
+            <text
+              x={x}
+              y={y - 6}
+              textAnchor="middle"
+              fontSize={10}
+              fontWeight={600}
+              fill={scoreColor(audit.score)}
+            >
+              {audit.score}
+            </text>
+          </g>
+        ))}
+      </svg>
     </s-box>
   );
 }
