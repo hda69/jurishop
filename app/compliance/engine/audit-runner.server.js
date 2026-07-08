@@ -8,6 +8,7 @@ import { loadTextTemplate } from "../templates/loader.server.js";
 import { prefillTemplateBody } from "../services/template-prefill.server.js";
 import { createAlertsFromAudit } from "../services/alerts.server.js";
 import { DEFAULT_LEGAL_DISCLAIMER } from "../principles.ts";
+import { effectivePlanFromProfile } from "../../billing/plans.server.js";
 
 const PACKS_DIR = join(process.cwd(), "app/compliance/rules/packs");
 
@@ -226,7 +227,7 @@ export async function runComplianceAudit(admin, shop, { trigger = "MANUAL" } = {
 
   const jurisdictions = resolveJurisdictions(
     JSON.parse(profile.activeMarkets || '["FR"]'),
-    profile.billingPlan ?? "FREE",
+    effectivePlanFromProfile(profile),
   );
   const packs = await loadRulePacks(jurisdictions);
   const allRules = flattenRules(packs);

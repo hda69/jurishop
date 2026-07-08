@@ -67,3 +67,46 @@ export function isBillingTestMode() {
   if (process.env.SHOPIFY_BILLING_TEST === "false") return false;
   return process.env.NODE_ENV !== "production";
 }
+
+/** Seul un abonnement ACTIVE donne accès aux fonctionnalités payantes. */
+export const PAID_SUBSCRIPTION_STATUS = "ACTIVE";
+
+export function pickPaidPlanFromSubscriptions(appSubscriptions = []) {
+  const paidSubs = appSubscriptions.filter(
+    (sub) =>
+      sub.status === PAID_SUBSCRIPTION_STATUS &&
+      (sub.name === PRO_PLAN || sub.name === EXPERT_PLAN),
+  );
+
+  if (paidSubs.length === 0) {
+    return { plan: PLAN_IDS.FREE, subscription: null };
+  }
+
+  const subscription =
+    paidSubs.find((s) => s.name === EXPERT_PLAN) ??
+    paidSubs.find((s) => s.name === PRO_PLAN) ??
+    paidSubs[0];
+
+  return {
+    plan: planFromSubscriptionName(subscription.name),
+    subscription,
+  };
+}
+
+/**
+ * Plan effectif pour une boutique — ne fait confiance au cache DB que si
+ * l'abonnement est marqué ACTIVE. Sinon, traité comme Gratuit.
+ */
+export function effectivePlanFromProfile(profile) {
+  if (!profile) return PLAN_IDS.FREE;
+  const cached = profile.billingPlan ?? PLAN_IDS.FREE;
+  if (cached === PLAN_IDS.FREE) return PLAN_IDS.FREE;
+  if (profile.billingSubscriptionStatus !== PAID_SUBSCRIPTION_STATUS) {
+    return PLAN_IDS.FREE;
+  }
+  return cached;
+}
+
+export function getEffectivePlanFeatures(profile) {
+  return getPlanFeatures(effectivePlanFromProfile(profile));
+}

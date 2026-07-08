@@ -23,4 +23,9 @@ export async function afterAuditRecorded(shop, trigger) {
   }
 }
 
-export { assertPlanFeature, getPlanFeatures, PLAN_IDS };
+export {
+  assertPlanFeature,
+  effectivePlanFromProfile,
+  PLAN_IDS,
+} from "./subscription.server.js";
+export { getPlanFeatures } from "./plans.server.js";

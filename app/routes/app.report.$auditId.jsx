@@ -1,8 +1,10 @@
 import { authenticate } from "../shopify.server";
 import { exportAuditReport } from "../models/compliance.server";
+import { syncBillingPlanFromShopify } from "../billing/subscription.server.js";
 
 export const loader = async ({ request, params }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
+  await syncBillingPlanFromShopify(session.shop, billing);
   const html = await exportAuditReport(session.shop, params.auditId);
 
   return new Response(html, {

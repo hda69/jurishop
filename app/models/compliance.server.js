@@ -16,6 +16,7 @@ import {
 import {
   assertPlanFeature,
   afterAuditRecorded,
+  effectivePlanFromProfile,
   getPlanFeatures,
   PLAN_IDS,
   validateAuditRequest,
@@ -92,20 +93,20 @@ export async function getShopProfile(shop) {
 
 export async function updateShopSettings(shop, settings) {
   const profile = await ensureShopProfile(shop);
-  const plan = profile.billingPlan ?? PLAN_IDS.FREE;
+  const plan = effectivePlanFromProfile(profile);
   const gated = enforceSettingsForPlan(plan, settings);
 
   if (gated.uiMode === "expert") {
-    const check = assertPlanFeature(plan, "expertMode");
+    const check = assertPlanFeature(profile, "expertMode");
     if (!check.allowed) throw new Error(check.reason);
   }
   if (gated.scheduledAuditEnabled) {
-    const check = assertPlanFeature(plan, "scheduledAudit");
+    const check = assertPlanFeature(profile, "scheduledAudit");
     if (!check.allowed) throw new Error(check.reason);
   }
   const markets = gated.activeMarkets ?? JSON.parse(profile.activeMarkets);
   if (markets.includes("EU")) {
-    const check = assertPlanFeature(plan, "euPack");
+    const check = assertPlanFeature(profile, "euPack");
     if (!check.allowed) throw new Error(check.reason);
   }
 
@@ -144,8 +145,7 @@ export async function updateShopSettings(shop, settings) {
 
 export async function lookupAndSaveSiret(shop, siret) {
   const profile = await ensureShopProfile(shop);
-  const plan = profile.billingPlan ?? PLAN_IDS.FREE;
-  const check = assertPlanFeature(plan, "sirene");
+  const check = assertPlanFeature(profile, "sirene");
   if (!check.allowed) throw new Error(check.reason);
 
   const company = await fetchCompanyBySiret(siret);
@@ -162,7 +162,7 @@ export async function getAuditHistory(shop, limit) {
   const profile = await getShopProfile(shop);
   if (!profile) return [];
 
-  const plan = profile.billingPlan ?? PLAN_IDS.FREE;
+  const plan = effectivePlanFromProfile(profile);
   const features = getPlanFeatures(plan);
   const take = limit ?? features.historyLimit;
 
@@ -192,8 +192,7 @@ export async function getAuditWithResults(shop, auditId) {
 
 export async function exportAuditReport(shop, auditId) {
   const profile = await getShopProfile(shop);
-  const plan = profile?.billingPlan ?? PLAN_IDS.FREE;
-  const check = assertPlanFeature(plan, "htmlReports");
+  const check = assertPlanFeature(profile, "htmlReports");
   if (!check.allowed) throw new Error(check.reason);
 
   const data = await getAuditWithResults(shop, auditId);
@@ -205,8 +204,7 @@ export async function createShareLink(shop, auditId) {
   const profile = await getShopProfile(shop);
   if (!profile) throw new Response("Not found", { status: 404 });
 
-  const plan = profile.billingPlan ?? PLAN_IDS.FREE;
-  const check = assertPlanFeature(plan, "shareLinks");
+  const check = assertPlanFeature(profile, "shareLinks");
   if (!check.allowed) throw new Error(check.reason);
 
   const audit = await prisma.complianceAudit.findFirst({

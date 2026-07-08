@@ -1,4 +1,4 @@
-import { redirect, useFetcher, useLoaderData, useSearchParams } from "react-router";
+import { redirect, useFetcher, useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useEffect } from "react";
@@ -11,7 +11,7 @@ import { PLAN_IDS, PLAN_MARKETING } from "../billing/plans.constants.js";
 import { isBillingTestMode } from "../billing/plans.server.js";
 import {
   resolveMerchantPlan,
-  setBillingPlan,
+  setBillingPlanFree,
 } from "../billing/subscription.server.js";
 
 function resolveAppUrl() {
@@ -27,11 +27,15 @@ function resolveAppUrl() {
 export const loader = async ({ request }) => {
   const { plan, features, profile } = await resolveMerchantPlan(request, authenticate);
   const url = new URL(request.url);
+  const billingReturn = url.searchParams.get("billing_return") === "1";
+
   return {
     plan,
     features,
     plans: PLAN_MARKETING,
-    subscribed: url.searchParams.get("subscribed") === "1",
+    billingReturn,
+    billingSucceeded: billingReturn && plan !== PLAN_IDS.FREE,
+    billingCancelled: billingReturn && plan === PLAN_IDS.FREE,
     manualAuditsRemaining:
       features.maxManualAuditsPerMonth === Infinity
         ? null
@@ -50,7 +54,7 @@ export const action = async ({ request }) => {
   const { session, billing } = await authenticate.admin(request);
   const formData = await request.formData();
   const intent = formData.get("intent");
-  const returnUrl = `${resolveAppUrl()}/app/plans?subscribed=1`;
+  const returnUrl = `${resolveAppUrl()}/app/plans?billing_return=1`;
   const test = isBillingTestMode();
 
   if (intent === "subscribe_pro") {
@@ -85,7 +89,7 @@ export const action = async ({ request }) => {
       }
     }
 
-    await setBillingPlan(session.shop, PLAN_IDS.FREE);
+    await setBillingPlanFree(session.shop);
     return redirect("/app/plans");
   }
 
@@ -93,16 +97,21 @@ export const action = async ({ request }) => {
 };
 
 export default function PlansPage() {
-  const { plan, plans, subscribed, manualAuditsRemaining } = useLoaderData();
+  const { plan, plans, billingSucceeded, billingCancelled, manualAuditsRemaining } =
+    useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
-  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    if (subscribed || searchParams.get("subscribed") === "1") {
-      shopify.toast.show("Abonnement mis à jour");
+    if (billingSucceeded) {
+      shopify.toast.show("Abonnement activé avec succès");
+    } else if (billingCancelled) {
+      shopify.toast.show(
+        "Abonnement non activé — vous restez sur le plan Gratuit",
+        { isError: true },
+      );
     }
-  }, [subscribed, searchParams, shopify]);
+  }, [billingSucceeded, billingCancelled, shopify]);
 
   return (
     <s-page heading="Abonnement JuriShop">

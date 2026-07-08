@@ -1,9 +1,13 @@
 import prisma from "../db.server.js";
 import {
   BILLING_PLANS,
+  effectivePlanFromProfile,
   EXPERT_PLAN,
+  getEffectivePlanFeatures,
   getPlanFeatures,
   isBillingTestMode,
+  PAID_SUBSCRIPTION_STATUS,
+  pickPaidPlanFromSubscriptions,
   planFromSubscriptionName,
   PLAN_IDS,
   PRO_PLAN,
@@ -13,7 +17,40 @@ function currentMonthKey() {
   return new Date().toISOString().slice(0, 7);
 }
 
-/** Synchronise le plan en base depuis l'état Billing API Shopify. */
+/** Réinitialise les réglages Pro/Expert si l'abonnement n'est plus actif. */
+async function enforceFreePlanSettings(shop) {
+  const profile = await prisma.shopComplianceProfile.findUnique({ where: { shop } });
+  if (!profile) return;
+
+  const markets = JSON.parse(profile.activeMarkets || '["FR"]');
+  const filteredMarkets = markets.filter((m) => m === "FR");
+  const nextMarkets = filteredMarkets.length > 0 ? filteredMarkets : ["FR"];
+
+  const needsUpdate =
+    profile.scheduledAuditEnabled ||
+    profile.uiMode === "expert" ||
+    markets.some((m) => m !== "FR") ||
+    profile.billingPlan !== PLAN_IDS.FREE;
+
+  if (!needsUpdate) return;
+
+  await prisma.shopComplianceProfile.update({
+    where: { shop },
+    data: {
+      billingPlan: PLAN_IDS.FREE,
+      billingSubscriptionId: null,
+      billingSubscriptionStatus: null,
+      scheduledAuditEnabled: false,
+      uiMode: "beginner",
+      activeMarkets: JSON.stringify(nextMarkets),
+    },
+  });
+}
+
+/**
+ * Source de vérité : Billing API Shopify.
+ * Met à jour le cache DB uniquement après vérification du statut ACTIVE.
+ */
 export async function syncBillingPlanFromShopify(shop, billing) {
   await prisma.shopComplianceProfile.upsert({
     where: { shop },
@@ -25,59 +62,38 @@ export async function syncBillingPlanFromShopify(shop, billing) {
     update: {},
   });
 
-  const { appSubscriptions, hasActivePayment } = await billing.check({
+  const { appSubscriptions } = await billing.check({
     plans: BILLING_PLANS,
     isTest: isBillingTestMode(),
   });
 
-  let plan = PLAN_IDS.FREE;
-  let subscriptionId = null;
-  let subscriptionStatus = null;
+  const { plan, subscription } = pickPaidPlanFromSubscriptions(appSubscriptions);
 
-  if (hasActivePayment && appSubscriptions.length > 0) {
-    const active =
-      appSubscriptions.find((s) => s.name === EXPERT_PLAN) ??
-      appSubscriptions.find((s) => s.name === PRO_PLAN) ??
-      appSubscriptions[0];
-
-    plan = planFromSubscriptionName(active.name);
-    subscriptionId = active.id;
-    subscriptionStatus = active.status;
+  if (plan === PLAN_IDS.FREE) {
+    await enforceFreePlanSettings(shop);
+    return PLAN_IDS.FREE;
   }
 
   await prisma.shopComplianceProfile.update({
     where: { shop },
     data: {
       billingPlan: plan,
-      billingSubscriptionId: subscriptionId,
-      billingSubscriptionStatus: subscriptionStatus,
+      billingSubscriptionId: subscription.id,
+      billingSubscriptionStatus: subscription.status,
     },
   });
 
   return plan;
 }
 
-export async function setBillingPlan(shop, plan) {
-  await prisma.shopComplianceProfile.upsert({
-    where: { shop },
-    create: {
-      shop,
-      primaryJurisdiction: "FR",
-      activeMarkets: JSON.stringify(["FR"]),
-      billingPlan: plan,
-    },
-    update: {
-      billingPlan: plan,
-      ...(plan === PLAN_IDS.FREE
-        ? { billingSubscriptionId: null, billingSubscriptionStatus: null }
-        : {}),
-    },
-  });
+/** Met le plan Gratuit après annulation explicite (Billing API déjà appelée). */
+export async function setBillingPlanFree(shop) {
+  await enforceFreePlanSettings(shop);
 }
 
 export async function getMerchantBilling(shop) {
   const profile = await prisma.shopComplianceProfile.findUnique({ where: { shop } });
-  const plan = profile?.billingPlan ?? PLAN_IDS.FREE;
+  const plan = effectivePlanFromProfile(profile);
   return {
     plan,
     features: getPlanFeatures(plan),
@@ -86,7 +102,7 @@ export async function getMerchantBilling(shop) {
 }
 
 export function canRunAuditTrigger(profile, trigger) {
-  const plan = profile?.billingPlan ?? PLAN_IDS.FREE;
+  const plan = effectivePlanFromProfile(profile);
   const features = getPlanFeatures(plan);
 
   if (trigger === "INSTALL") return { allowed: true };
@@ -101,7 +117,7 @@ export function canRunAuditTrigger(profile, trigger) {
       return {
         allowed: false,
         reason:
-          "Les audits automatiques nécessitent le plan Pro ou Expert.",
+          "Les audits automatiques nécessitent un abonnement Pro ou Expert actif.",
       };
     }
   }
@@ -110,7 +126,7 @@ export function canRunAuditTrigger(profile, trigger) {
 }
 
 export async function assertManualAuditAllowed(profile) {
-  const plan = profile?.billingPlan ?? PLAN_IDS.FREE;
+  const plan = effectivePlanFromProfile(profile);
   const features = getPlanFeatures(plan);
 
   if (features.maxManualAuditsPerMonth === Infinity) {
@@ -138,7 +154,7 @@ export async function recordManualAudit(shop) {
   const profile = await prisma.shopComplianceProfile.findUnique({ where: { shop } });
   if (!profile) return;
 
-  const plan = profile.billingPlan ?? PLAN_IDS.FREE;
+  const plan = effectivePlanFromProfile(profile);
   if (getPlanFeatures(plan).maxManualAuditsPerMonth === Infinity) return;
 
   const monthKey = currentMonthKey();
@@ -153,7 +169,8 @@ export async function recordManualAudit(shop) {
   });
 }
 
-export function assertPlanFeature(plan, feature) {
+export function assertPlanFeature(profile, feature) {
+  const plan = effectivePlanFromProfile(profile);
   const features = getPlanFeatures(plan);
   if (!features[feature]) {
     const labels = {
@@ -167,7 +184,7 @@ export function assertPlanFeature(plan, feature) {
     };
     return {
       allowed: false,
-      reason: `${labels[feature] ?? "cette fonctionnalité"} nécessite un plan supérieur.`,
+      reason: `${labels[feature] ?? "cette fonctionnalité"} nécessite un abonnement Pro ou Expert actif.`,
     };
   }
   return { allowed: true };
@@ -175,7 +192,16 @@ export function assertPlanFeature(plan, feature) {
 
 export async function resolveMerchantPlan(request, authenticate) {
   const { session, billing } = await authenticate.admin(request);
-  await syncBillingPlanFromShopify(session.shop, billing);
-  const { plan, features, profile } = await getMerchantBilling(session.shop);
+  const plan = await syncBillingPlanFromShopify(session.shop, billing);
+  const { features, profile } = await getMerchantBilling(session.shop);
   return { session, billing, plan, features, profile };
 }
+
+export {
+  effectivePlanFromProfile,
+  getEffectivePlanFeatures,
+  getPlanFeatures,
+  PAID_SUBSCRIPTION_STATUS,
+  planFromSubscriptionName,
+  PLAN_IDS,
+};

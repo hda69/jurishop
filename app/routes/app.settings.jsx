@@ -14,20 +14,29 @@ import {
 } from "../models/compliance.server";
 
 export const loader = async ({ request }) => {
-  const { getPlanFeatures, PLAN_IDS } = await import(
-    "../billing/audit-gate.server.js"
+  const { getPlanFeatures, effectivePlanFromProfile } = await import(
+    "../billing/plans.server.js"
   );
-  const { session } = await authenticate.admin(request);
+  const { PLAN_IDS } = await import("../billing/plans.constants.js");
+  const { session, billing } = await authenticate.admin(request);
+  const { syncBillingPlanFromShopify } = await import(
+    "../billing/subscription.server.js"
+  );
+  await syncBillingPlanFromShopify(session.shop, billing);
   await ensureShopProfile(session.shop);
   const profile = serializeProfile(await getShopProfile(session.shop));
-  const plan = profile?.billingPlan ?? PLAN_IDS.FREE;
+  const plan = effectivePlanFromProfile(profile);
   const features = getPlanFeatures(plan);
   const score = computeComplianceScore(profile);
   return { profile, score, badgeSnippet: getBadgeSnippet(profile, score), plan, features };
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, billing } = await authenticate.admin(request);
+  const { syncBillingPlanFromShopify } = await import(
+    "../billing/subscription.server.js"
+  );
+  await syncBillingPlanFromShopify(session.shop, billing);
   const formData = await request.formData();
   const intent = formData.get("intent");
 

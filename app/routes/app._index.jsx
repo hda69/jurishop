@@ -15,19 +15,20 @@ import {
 } from "../models/compliance.server";
 import { ComplianceSummary } from "../components/RecommendationPanel";
 import { PLAN_IDS } from "../billing/plans.constants.js";
+import { effectivePlanFromProfile } from "../billing/plans.server.js";
+import { syncBillingPlanFromShopify } from "../billing/subscription.server.js";
 
 export const loader = async ({ request }) => {
-  const { getPlanFeatures, PLAN_IDS: PlanIds } = await import(
-    "../billing/audit-gate.server.js"
-  );
-  const { PLAN_MARKETING } = await import("../billing/plans.server.js");
-  const { admin, session } = await authenticate.admin(request);
+  const { getPlanFeatures } = await import("../billing/plans.server.js");
+  const { PLAN_MARKETING } = await import("../billing/plans.constants.js");
+  const { admin, session, billing } = await authenticate.admin(request);
+  await syncBillingPlanFromShopify(session.shop, billing);
   const shop = session.shop;
 
   const profile = await ensureAuditCurrent(admin, shop);
 
   const serialized = serializeProfile(profile);
-  const plan = serialized?.billingPlan ?? PlanIds.FREE;
+  const plan = effectivePlanFromProfile(serialized);
   const features = getPlanFeatures(plan);
   const alerts = await getUnreadAlerts(shop);
   const audits = await getAuditHistory(shop, 5);
@@ -56,7 +57,8 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { admin, session } = await authenticate.admin(request);
+  const { admin, session, billing } = await authenticate.admin(request);
+  await syncBillingPlanFromShopify(session.shop, billing);
   const formData = await request.formData();
 
   if (formData.get("intent") === "run_audit") {

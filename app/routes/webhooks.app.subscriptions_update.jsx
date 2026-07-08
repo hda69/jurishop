@@ -1,6 +1,11 @@
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
-import { planFromSubscriptionName, PLAN_IDS } from "../billing/plans.server.js";
+import {
+  PAID_SUBSCRIPTION_STATUS,
+  planFromSubscriptionName,
+  PLAN_IDS,
+} from "../billing/plans.server.js";
+import { setBillingPlanFree } from "../billing/subscription.server.js";
 
 export const action = async ({ request }) => {
   const { shop, topic, payload } = await authenticate.webhook(request);
@@ -12,12 +17,21 @@ export const action = async ({ request }) => {
     return new Response();
   }
 
-  const status = subscription.status;
+  const status = subscription.status?.toUpperCase?.() ?? subscription.status;
   const name = subscription.name;
 
   let plan = PLAN_IDS.FREE;
-  if (status === "ACTIVE" || status === "ACCEPTED") {
+  if (status === PAID_SUBSCRIPTION_STATUS) {
     plan = planFromSubscriptionName(name);
+  }
+
+  if (plan === PLAN_IDS.FREE) {
+    await setBillingPlanFree(shop);
+    await prisma.shopComplianceProfile.updateMany({
+      where: { shop },
+      data: { billingSubscriptionStatus: status },
+    });
+    return new Response();
   }
 
   await prisma.shopComplianceProfile.updateMany({
@@ -26,9 +40,6 @@ export const action = async ({ request }) => {
       billingPlan: plan,
       billingSubscriptionId: subscription.admin_graphql_api_id ?? null,
       billingSubscriptionStatus: status,
-      ...(plan === PLAN_IDS.FREE
-        ? { billingSubscriptionId: null, billingSubscriptionStatus: status }
-        : {}),
     },
   });
 
