@@ -306,7 +306,6 @@ export async function runComplianceAudit(admin, shop, { trigger = "MANUAL" } = {
         shopCountry: context.shop.billingAddress?.countryCodeV2,
         shopCurrency: context.shop.currencyCode,
         shopPlan: context.shop.plan?.displayName,
-        marketsSnapshot: JSON.stringify(context.markets),
       },
     });
 
