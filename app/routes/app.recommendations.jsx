@@ -14,18 +14,22 @@ import {
   ComplianceSummary,
   RecommendationPanel,
 } from "../components/RecommendationPanel";
+import { CATEGORY_LABEL } from "../compliance/constants/labels.js";
 
 export const loader = async ({ request }) => {
   const { admin, session } = await authenticate.admin(request);
   const shop = session.shop;
+  const url = new URL(request.url);
+  const category = url.searchParams.get("category") || undefined;
 
   const profile = await ensureAuditCurrent(admin, shop);
-  const recommendations = await getRecommendations(shop);
+  const recommendations = await getRecommendations(shop, { category });
 
   return {
     shopDomain: shop,
     profile: serializeProfile(profile),
     recommendations,
+    category,
   };
 };
 
@@ -35,8 +39,16 @@ export const action = async ({ request }) => {
   const intent = formData.get("intent");
 
   if (intent === "run_audit") {
-    await runAudit(admin, session.shop, { trigger: "MANUAL" });
-    return { ok: true, message: "Audit terminé", audit: true };
+    try {
+      await runAudit(admin, session.shop, { trigger: "MANUAL" });
+      return { ok: true, message: "Audit terminé", audit: true };
+    } catch (error) {
+      return {
+        ok: false,
+        message: error.message ?? "Impossible de lancer l'audit",
+        planLimit: error.code === "PLAN_LIMIT",
+      };
+    }
   }
 
   const id = formData.get("id");
@@ -68,7 +80,7 @@ export const action = async ({ request }) => {
 };
 
 export default function RecommendationsPage() {
-  const { shopDomain, profile, recommendations } = useLoaderData();
+  const { shopDomain, profile, recommendations, category } = useLoaderData();
   const revalidator = useRevalidator();
   const auditFetcher = useFetcher();
   const shopify = useAppBridge();
@@ -78,9 +90,11 @@ export default function RecommendationsPage() {
     auditFetcher.formData?.get("intent") === "run_audit";
 
   useEffect(() => {
-    if (auditFetcher.state === "idle" && auditFetcher.data?.audit) {
-      revalidator.revalidate();
-      shopify.toast.show(auditFetcher.data.message ?? "Audit terminé");
+    if (auditFetcher.state === "idle" && auditFetcher.data?.message) {
+      if (auditFetcher.data.audit) revalidator.revalidate();
+      shopify.toast.show(auditFetcher.data.message, {
+        isError: auditFetcher.data.ok === false,
+      });
     }
   }, [auditFetcher.state, auditFetcher.data, revalidator, shopify]);
 
@@ -107,6 +121,15 @@ export default function RecommendationsPage() {
       </s-banner>
 
       <ComplianceSummary profile={profile} />
+
+      {category && (
+        <s-banner tone="info">
+          <s-paragraph>
+            Filtre actif : {CATEGORY_LABEL[category] ?? category}.{" "}
+            <s-link href="/app/recommendations">Voir tout</s-link>
+          </s-paragraph>
+        </s-banner>
+      )}
 
       <s-section heading="Manquements détectés">
         <s-stack direction="inline" gap="base">

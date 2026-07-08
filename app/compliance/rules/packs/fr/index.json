@@ -82,7 +82,18 @@
       "title": "Conditions Générales de Vente",
       "description": "Les CGV doivent être accessibles avant la commande.",
       "legalReference": "Code de la consommation art. L111-1",
-      "remediation": "Créez une page CGV ou activez la politique « Conditions de vente » dans Shopify.",
+      "advisory": {
+        "remediationSteps": [
+          "Créez une page CGV ou activez la politique « Conditions de vente » dans Shopify.",
+          "Utilisez le modèle JuriShop comme base et complétez livraison, retours et médiation.",
+          "Publiez et liez la page depuis le footer."
+        ],
+        "merchantActions": [
+          { "label": "Créer une page", "adminPath": "/pages/new" },
+          { "label": "Politiques Shopify", "adminPath": "/settings/legal" }
+        ],
+        "textTemplateId": "cgv-fr"
+      },
       "checkType": "composite_any",
       "params": {
         "ruleIds": ["fr.legal_pages.cgv_page", "fr.legal_pages.cgv_policy"]
@@ -116,6 +127,55 @@
       }
     },
     {
+      "id": "fr.legal_pages.cgv_content",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "legal_pages",
+      "severity": "warning",
+      "title": "Contenu des CGV",
+      "description": "Les CGV doivent mentionner rétractation, livraison et médiation.",
+      "legalReference": "Code de la consommation art. L111-1",
+      "advisory": {
+        "textTemplateId": "cgv-fr",
+        "remediationSteps": [
+          "Ouvrez votre page ou politique CGV.",
+          "Vérifiez les mentions manquantes signalées par l'audit.",
+          "Complétez avec le modèle JuriShop si besoin."
+        ]
+      },
+      "checkType": "composite_any",
+      "params": {
+        "ruleIds": ["fr.legal_pages.cgv_content_page", "fr.legal_pages.cgv_content_policy"]
+      }
+    },
+    {
+      "id": "fr.legal_pages.cgv_content_page",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "legal_pages",
+      "severity": "warning",
+      "title": "Contenu CGV (page)",
+      "checkType": "page_content",
+      "params": {
+        "titlePatterns": ["conditions générales de vente", "cgv", "conditions generales"],
+        "handlePatterns": ["cgv", "conditions-generales-de-vente"],
+        "requiredPatterns": ["14 jours|quatorze jours|rétractation|retractation", "livraison|délai de livraison|delai", "médiation|mediateur|médiateur"]
+      }
+    },
+    {
+      "id": "fr.legal_pages.cgv_content_policy",
+      "version": "1.0.0",
+      "jurisdiction": "FR",
+      "category": "legal_pages",
+      "severity": "warning",
+      "title": "Contenu CGV (politique Shopify)",
+      "checkType": "shop_policy_content",
+      "params": {
+        "policyType": "TERMS_OF_SERVICE",
+        "requiredPatterns": ["14 jours|quatorze jours|rétractation|retractation", "livraison|délai de livraison|delai", "médiation|mediateur|médiateur"]
+      }
+    },
+    {
       "id": "fr.gdpr.privacy_policy",
       "version": "1.0.0",
       "jurisdiction": "FR",
@@ -124,7 +184,18 @@
       "title": "Politique de confidentialité",
       "description": "Une politique de confidentialité conforme RGPD doit être publiée.",
       "legalReference": "RGPD art. 13-14",
-      "remediation": "Rédigez et publiez une politique de confidentialité (page ou politique Shopify).",
+      "advisory": {
+        "remediationSteps": [
+          "Rédigez et publiez une politique de confidentialité.",
+          "Mentionnez les droits des personnes et la base légale du traitement.",
+          "Liez-la depuis le footer."
+        ],
+        "merchantActions": [
+          { "label": "Créer une page", "adminPath": "/pages/new" },
+          { "label": "Politiques Shopify", "adminPath": "/settings/legal" }
+        ],
+        "textTemplateId": "politique-confidentialite-fr"
+      },
       "checkType": "composite_any",
       "params": {
         "ruleIds": ["fr.gdpr.privacy_page", "fr.gdpr.privacy_policy_shopify"]

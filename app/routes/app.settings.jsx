@@ -17,7 +17,7 @@ export const loader = async ({ request }) => {
   const { getPlanFeatures, effectivePlanFromProfile } = await import(
     "../billing/plans.server.js"
   );
-  const { PLAN_IDS } = await import("../billing/plans.constants.js");
+  const { PLAN_IDS, PLAN_MARKETING } = await import("../billing/plans.constants.js");
   const { session, billing } = await authenticate.admin(request);
   const { syncBillingPlanFromShopify } = await import(
     "../billing/subscription.server.js"
@@ -26,9 +26,10 @@ export const loader = async ({ request }) => {
   await ensureShopProfile(session.shop);
   const profile = serializeProfile(await getShopProfile(session.shop));
   const plan = effectivePlanFromProfile(profile);
+  const planName = PLAN_MARKETING.find((p) => p.id === plan)?.name ?? plan;
   const features = getPlanFeatures(plan);
   const score = computeComplianceScore(profile);
-  return { profile, score, badgeSnippet: getBadgeSnippet(profile, score), plan, features };
+  return { profile, score, badgeSnippet: getBadgeSnippet(profile, score), plan, planName, features };
 };
 
 export const action = async ({ request }) => {
@@ -72,7 +73,7 @@ export const action = async ({ request }) => {
 };
 
 export default function SettingsPage() {
-  const { profile, score, badgeSnippet, plan, features } = useLoaderData();
+  const { profile, score, badgeSnippet, plan, planName, features } = useLoaderData();
   const fetcher = useFetcher();
   const siretFetcher = useFetcher();
   const shopify = useAppBridge();
@@ -184,8 +185,9 @@ export default function SettingsPage() {
         <s-section heading="Alertes">
           <s-stack direction="block" gap="base">
             <s-text-field
-              label="Email d'alerte (futur)"
+              label="Email d'alerte"
               name="alertEmail"
+              details="Recevez un email en cas de régression de conformité (nécessite RESEND_API_KEY côté serveur)."
               value={profile?.alertEmail ?? ""}
             />
             <s-switch
@@ -277,7 +279,7 @@ export default function SettingsPage() {
             conserveront les placeholders jusqu&apos;à réactivation.
           </s-paragraph>
         )}
-        <s-paragraph color="subdued">Plan actuel : {plan}</s-paragraph>
+        <s-paragraph color="subdued">Plan actuel : {planName}</s-paragraph>
       </s-section>
     </s-page>
   );

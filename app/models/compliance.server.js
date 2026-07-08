@@ -151,6 +151,10 @@ export async function updateShopSettings(shop, settings) {
         gated.sireneAutoPrefill !== undefined
           ? gated.sireneAutoPrefill
           : profile.sireneAutoPrefill,
+      onboardingDismissed:
+        gated.onboardingDismissed !== undefined
+          ? gated.onboardingDismissed
+          : profile.onboardingDismissed,
     },
   });
 }
@@ -267,12 +271,15 @@ export async function getSharedReport(token) {
   return generateAuditReportHtml({ shop: link.shop.shop, ...data, rulesById });
 }
 
-export async function getRecommendations(shop) {
+export async function getRecommendations(shop, { category } = {}) {
   const profile = await getShopProfile(shop);
   if (!profile) return [];
 
+  const where = { shopId: profile.id };
+  if (category) where.category = category;
+
   const rows = await prisma.complianceRecommendation.findMany({
-    where: { shopId: profile.id },
+    where,
     orderBy: { createdAt: "desc" },
   });
 

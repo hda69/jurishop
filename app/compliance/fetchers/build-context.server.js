@@ -57,13 +57,31 @@ const SHOP_QUERY = `#graphql
   }
 `;
 
-const PAGES_QUERY = `#graphql
-  query JuriShopPages {
-    pages(first: 50) {
+const PAGES_PAGE_QUERY = `#graphql
+  query JuriShopPagesPage($cursor: String) {
+    pages(first: 100, after: $cursor) {
       nodes { id title handle body isPublished }
+      pageInfo { hasNextPage endCursor }
     }
   }
 `;
+
+async function fetchAllPages(admin) {
+  const nodes = [];
+  let cursor = null;
+  let hasNext = true;
+
+  while (hasNext && nodes.length < 500) {
+    const data = await runQuery(admin, "pages", PAGES_PAGE_QUERY, { cursor });
+    const batch = data?.pages;
+    if (!batch) break;
+    nodes.push(...(batch.nodes ?? []));
+    hasNext = batch.pageInfo?.hasNextPage ?? false;
+    cursor = batch.pageInfo?.endCursor ?? null;
+  }
+
+  return { nodes };
+}
 
 const MARKETS_QUERY = `#graphql
   query JuriShopMarkets {
@@ -181,7 +199,7 @@ export async function buildShopAuditContext(admin, { productsFirst = 50 } = {}) 
   const [shopData, pagesData, marketsData, productsData, themesData] =
     await Promise.all([
       runQuery(admin, "shop", SHOP_QUERY),
-      runQuery(admin, "pages", PAGES_QUERY),
+      fetchAllPages(admin),
       runQuery(admin, "markets", MARKETS_QUERY),
       runQuery(admin, "products", PRODUCTS_QUERY, { productsFirst }),
       runQuery(admin, "themes", THEMES_QUERY),

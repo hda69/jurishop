@@ -7,6 +7,7 @@ import { aggregateAuditStatus, countResults } from "./status-aggregator.server.j
 import { loadTextTemplate } from "../templates/loader.server.js";
 import { prefillTemplateBody } from "../services/template-prefill.server.js";
 import { createAlertsFromAudit } from "../services/alerts.server.js";
+import { sendRegressionEmailAlerts } from "../services/email-alerts.server.js";
 import { DEFAULT_LEGAL_DISCLAIMER } from "../principles.ts";
 import { effectivePlanFromProfile, getPlanFeatures } from "../../billing/plans.server.js";
 import { getSirenePrefillContext } from "../services/sirene-prefill.server.js";
@@ -306,15 +307,20 @@ export async function runComplianceAudit(admin, shop, { trigger = "MANUAL" } = {
     });
     await refreshIssueCounts(profile.id);
 
+    let newAlerts = [];
     if (profile.alertsEnabled) {
-      await createAlertsFromAudit(
-        profile.id,
-        audit.id,
-        ruleResults,
-        rulesById,
-        internalRuleIds,
-        previousAudit,
-      );
+      newAlerts =
+        (await createAlertsFromAudit(
+          profile.id,
+          audit.id,
+          ruleResults,
+          rulesById,
+          internalRuleIds,
+          previousAudit,
+        )) ?? [];
+      if (newAlerts.length > 0) {
+        await sendRegressionEmailAlerts(shop, profile, newAlerts);
+      }
     }
 
     const updatedProfile = await prisma.shopComplianceProfile.update({

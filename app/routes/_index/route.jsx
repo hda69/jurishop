@@ -12,42 +12,50 @@ export const loader = async ({ request }) => {
   return { showForm: Boolean(login) };
 };
 
-export default function App() {
+export default function LandingPage() {
   const { showForm } = useLoaderData();
 
   return (
     <div className={styles.index}>
       <div className={styles.content}>
-        <h1 className={styles.heading}>A short heading about [your app]</h1>
+        <h1 className={styles.heading}>JuriShop</h1>
         <p className={styles.text}>
-          A tagline about [your app] that describes your value proposition.
+          Auditez la conformité légale de votre boutique Shopify (France & UE) —
+          en lecture seule, sans modifier votre boutique.
         </p>
         {showForm && (
           <Form className={styles.form} method="post" action="/auth/login">
             <label className={styles.label}>
-              <span>Shop domain</span>
-              <input className={styles.input} type="text" name="shop" />
-              <span>e.g: my-shop-domain.myshopify.com</span>
+              <span>Domaine de la boutique</span>
+              <input
+                className={styles.input}
+                type="text"
+                name="shop"
+                placeholder="ma-boutique.myshopify.com"
+              />
             </label>
             <button className={styles.button} type="submit">
-              Log in
+              Se connecter
             </button>
           </Form>
         )}
         <ul className={styles.list}>
           <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+            <strong>Score de conformité</strong> — pages légales, RGPD, droits
+            consommateurs et prix.
           </li>
           <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+            <strong>Recommandations actionnables</strong> — modèles de textes et
+            liens vers l&apos;admin Shopify.
           </li>
           <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+            <strong>Pré-remplissage SIRENE</strong> — mentions légales et CGV
+            (plan Expert).
           </li>
         </ul>
+        <p className={styles.text}>
+          <a href="/privacy">Politique de confidentialité</a>
+        </p>
       </div>
     </div>
   );

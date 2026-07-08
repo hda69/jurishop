@@ -34,6 +34,18 @@ api_version = "2026-10"
   uri = "/webhooks/compliance"
   topics = [ "products/update", "shop/update", "themes/update", "themes/publish" ]
 
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/customers/data_request"
+  topics = [ "customers/data_request" ]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/customers/redact"
+  topics = [ "customers/redact" ]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/shop/redact"
+  topics = [ "shop/redact" ]
+
 [auth]
 redirect_urls = [
   "https://jurishop-production.up.railway.app/auth/callback",
@@ -42,5 +54,4 @@ redirect_urls = [
 ]
 
 [build]
-include_config_on_deploy = true
 automatically_update_urls_on_dev = true

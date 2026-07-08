@@ -74,6 +74,7 @@ model ShopComplianceProfile {
   siret             String?
   companyData       String?  // JSON — données SIRENE
   sireneAutoPrefill Boolean  @default(true) // plan Expert : pré-remplir les modèles légaux
+  onboardingDismissed Boolean @default(false)
 
   // Audit planifié (compense l'absence de webhooks pages/politiques)
   scheduledAuditEnabled Boolean @default(true)

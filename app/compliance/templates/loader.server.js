@@ -5,6 +5,8 @@ const TEMPLATES_DIR = join(process.cwd(), "app/compliance/templates");
 
 const TEMPLATE_FILES = {
   "mentions-legales-fr": "fr/mentions-legales.html",
+  "cgv-fr": "fr/cgv.html",
+  "politique-confidentialite-fr": "fr/politique-confidentialite.html",
 };
 
 /** Charge un modèle de texte par identifiant (lecture fichier uniquement). */

@@ -155,7 +155,19 @@ export default function PlansPage() {
                   {item.id === PLAN_IDS.FREE && !isCurrent && (
                     <fetcher.Form method="post">
                       <input type="hidden" name="intent" value="select_free" />
-                      <s-button type="submit" variant="secondary">
+                      <s-button
+                        type="submit"
+                        variant="secondary"
+                        onClick={(e) => {
+                          if (
+                            !window.confirm(
+                              "Revenir au plan Gratuit ? Votre abonnement payant sera annulé.",
+                            )
+                          ) {
+                            e.preventDefault();
+                          }
+                        }}
+                      >
                         Revenir au plan Gratuit
                       </s-button>
                     </fetcher.Form>

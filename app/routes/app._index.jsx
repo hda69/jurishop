@@ -17,6 +17,38 @@ import { ComplianceSummary } from "../components/RecommendationPanel";
 import { PLAN_IDS } from "../billing/plans.constants.js";
 import { effectivePlanFromProfile } from "../billing/plans.server.js";
 import { syncBillingPlanFromShopify } from "../billing/subscription.server.js";
+import {
+  PROFILE_KEY_TO_CATEGORY,
+} from "../compliance/constants/labels.js";
+
+function manualAuditsRemaining(profile, features) {
+  if (features.maxManualAuditsPerMonth === Infinity) return null;
+  const monthKey = new Date().toISOString().slice(0, 7);
+  const count =
+    profile?.manualAuditsMonthKey === monthKey
+      ? profile.manualAuditsThisMonth
+      : 0;
+  return Math.max(0, features.maxManualAuditsPerMonth - count);
+}
+
+function auditScore(audit) {
+  const weights = {
+    COMPLIANT: 100,
+    WARNING: 60,
+    NON_COMPLIANT: 20,
+    UNKNOWN: 0,
+  };
+  const fields = [
+    audit.legalPagesStatus,
+    audit.gdprStatus,
+    audit.consumerRightsStatus,
+    audit.pricingStatus,
+  ];
+  return Math.round(
+    fields.map((s) => weights[s] ?? 0).reduce((a, b) => a + b, 0) /
+      fields.length,
+  );
+}
 
 export const loader = async ({ request }) => {
   const { getPlanFeatures } = await import("../billing/plans.server.js");
@@ -34,12 +66,14 @@ export const loader = async ({ request }) => {
   const audits = await getAuditHistory(shop, 5);
   const score = computeComplianceScore(serialized);
   const nextAuditInDays = daysUntilNextAudit(profile);
+  const auditsRemaining = manualAuditsRemaining(serialized, features);
 
   return {
     profile: serialized,
     plan,
     planName: PLAN_MARKETING.find((p) => p.id === plan)?.name ?? plan,
     features,
+    auditsRemaining,
     score,
     nextAuditInDays,
     alerts: alerts.map((a) => ({
@@ -50,8 +84,13 @@ export const loader = async ({ request }) => {
       id: a.id,
       startedAt: a.startedAt.toISOString(),
       overallStatus: a.overallStatus,
+      legalPagesStatus: a.legalPagesStatus,
+      gdprStatus: a.gdprStatus,
+      consumerRightsStatus: a.consumerRightsStatus,
+      pricingStatus: a.pricingStatus,
       rulesPassed: a.rulesPassed,
       rulesFailed: a.rulesFailed,
+      score: auditScore(a),
     })),
   };
 };
@@ -79,12 +118,27 @@ export const action = async ({ request }) => {
     return { ok: true };
   }
 
+  if (formData.get("intent") === "dismiss_onboarding") {
+    const { updateShopSettings } = await import("../models/compliance.server.js");
+    await updateShopSettings(session.shop, { onboardingDismissed: true });
+    return { ok: true };
+  }
+
   return { ok: false };
 };
 
 export default function Index() {
-  const { profile, score, alerts, recentAudits, nextAuditInDays, plan, planName, features } =
-    useLoaderData();
+  const {
+    profile,
+    score,
+    alerts,
+    recentAudits,
+    nextAuditInDays,
+    plan,
+    planName,
+    features,
+    auditsRemaining,
+  } = useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
   const isAuditing =
@@ -125,6 +179,34 @@ export default function Index() {
         Lancer un audit
       </s-button>
 
+      {plan === PLAN_IDS.FREE && auditsRemaining !== null && (
+        <s-banner tone="info">
+          <s-paragraph>
+            Plan Gratuit : {auditsRemaining} audit manuel restant ce mois-ci.{" "}
+            <s-link href="/app/plans">Passer au plan Pro</s-link> pour des audits
+            illimités.
+          </s-paragraph>
+        </s-banner>
+      )}
+
+      {!profile?.onboardingDismissed && (
+        <s-banner tone="info" heading="Bienvenue sur JuriShop">
+          <s-stack direction="block" gap="base">
+            <s-paragraph>
+              1. Renseignez votre SIRET dans les Paramètres (plan Expert) · 2.
+              Lancez un premier audit · 3. Suivez les recommandations pour corriger
+              votre conformité.
+            </s-paragraph>
+            <fetcher.Form method="post">
+              <input type="hidden" name="intent" value="dismiss_onboarding" />
+              <s-button type="submit" variant="tertiary">
+                Masquer ce guide
+              </s-button>
+            </fetcher.Form>
+          </s-stack>
+        </s-banner>
+      )}
+
       {alerts.length > 0 && (
         <s-banner tone="warning" heading={`${alerts.length} alerte(s)`}>
           <s-stack direction="block" gap="base">
@@ -157,30 +239,36 @@ export default function Index() {
       <ComplianceSummary profile={profile} />
 
       <s-section heading="Conformité par domaine">
+        <s-paragraph color="subdued">
+          Cliquez sur un domaine pour voir les recommandations associées.
+        </s-paragraph>
         <s-stack direction="block" gap="base">
-          {categories.map(({ key, label }) => (
-            <s-box
-              key={key}
-              padding="base"
-              borderWidth="base"
-              borderRadius="base"
-            >
-              <s-stack direction="inline" gap="base">
-                <s-text type="strong">{label}</s-text>
-                <s-badge
-                  tone={
-                    profile?.[key] === "COMPLIANT"
-                      ? "success"
-                      : profile?.[key] === "WARNING"
-                        ? "warning"
-                        : "critical"
-                  }
-                >
-                  {statusLabel[profile?.[key] ?? "UNKNOWN"]}
-                </s-badge>
-              </s-stack>
-            </s-box>
-          ))}
+          {categories.map(({ key, label }) => {
+            const category = PROFILE_KEY_TO_CATEGORY[key];
+            return (
+              <s-link
+                key={key}
+                href={`/app/recommendations?category=${category}`}
+              >
+                <s-box padding="base" borderWidth="base" borderRadius="base">
+                  <s-stack direction="inline" gap="base">
+                    <s-text type="strong">{label}</s-text>
+                    <s-badge
+                      tone={
+                        profile?.[key] === "COMPLIANT"
+                          ? "success"
+                          : profile?.[key] === "WARNING"
+                            ? "warning"
+                            : "critical"
+                      }
+                    >
+                      {statusLabel[profile?.[key] ?? "UNKNOWN"]}
+                    </s-badge>
+                  </s-stack>
+                </s-box>
+              </s-link>
+            );
+          })}
         </s-stack>
       </s-section>
 

@@ -9,6 +9,7 @@ import {
   getShopProfile,
   serializeProfile,
 } from "../models/compliance.server";
+import { AUDIT_TRIGGER_LABEL } from "../compliance/constants/labels.js";
 
 const STATUS_LABEL = {
   COMPLIANT: "Conforme",
@@ -17,11 +18,29 @@ const STATUS_LABEL = {
   UNKNOWN: "—",
 };
 
+function auditScore(audit) {
+  const weights = {
+    COMPLIANT: 100,
+    WARNING: 60,
+    NON_COMPLIANT: 20,
+    UNKNOWN: 0,
+  };
+  const fields = [
+    audit.legalPagesStatus,
+    audit.gdprStatus,
+    audit.consumerRightsStatus,
+    audit.pricingStatus,
+  ];
+  return Math.round(
+    fields.map((s) => weights[s] ?? 0).reduce((a, b) => a + b, 0) /
+      fields.length,
+  );
+}
+
 export const loader = async ({ request }) => {
   const { getPlanFeatures, effectivePlanFromProfile } = await import(
     "../billing/plans.server.js"
   );
-  const { PLAN_IDS } = await import("../billing/plans.constants.js");
   const { session, billing } = await authenticate.admin(request);
   const { syncBillingPlanFromShopify } = await import(
     "../billing/subscription.server.js"
@@ -31,16 +50,14 @@ export const loader = async ({ request }) => {
   const plan = effectivePlanFromProfile(profile);
   const features = getPlanFeatures(plan);
   const audits = await getAuditHistory(session.shop);
-  return {
-    profile,
-    plan,
-    features,
-    audits: audits.map((a) => ({
-      ...a,
-      startedAt: a.startedAt.toISOString(),
-      completedAt: a.completedAt?.toISOString() ?? null,
-    })),
-  };
+  const scored = audits.map((a) => ({
+    ...a,
+    score: auditScore(a),
+    startedAt: a.startedAt.toISOString(),
+    completedAt: a.completedAt?.toISOString() ?? null,
+    triggerLabel: AUDIT_TRIGGER_LABEL[a.trigger] ?? a.trigger,
+  }));
+  return { profile, plan, features, audits: scored };
 };
 
 export const action = async ({ request }) => {
@@ -68,6 +85,58 @@ export const action = async ({ request }) => {
   return { ok: false };
 };
 
+function ScoreChart({ audits }) {
+  if (audits.length < 2) return null;
+  const ordered = [...audits].reverse().slice(-10);
+  const max = 100;
+
+  return (
+    <s-box padding="base" borderWidth="base" borderRadius="base">
+      <s-text type="strong">Évolution du score (/100)</s-text>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          gap: "8px",
+          height: "120px",
+          marginTop: "12px",
+        }}
+      >
+        {ordered.map((audit) => (
+          <div
+            key={audit.id}
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "4px",
+            }}
+            title={`${new Date(audit.startedAt).toLocaleDateString("fr-FR")} — ${audit.score}/100`}
+          >
+            <div
+              style={{
+                width: "100%",
+                height: `${Math.max(8, (audit.score / max) * 100)}%`,
+                background:
+                  audit.score >= 80
+                    ? "#29845a"
+                    : audit.score >= 50
+                      ? "#b98900"
+                      : "#e51c00",
+                borderRadius: "4px 4px 0 0",
+              }}
+            />
+            <span style={{ fontSize: "10px", color: "#6d7175" }}>
+              {audit.score}
+            </span>
+          </div>
+        ))}
+      </div>
+    </s-box>
+  );
+}
+
 export default function HistoryPage() {
   const { audits, features } = useLoaderData();
   const fetcher = useFetcher();
@@ -76,19 +145,17 @@ export default function HistoryPage() {
   useEffect(() => {
     if (fetcher.data?.shareUrl) {
       navigator.clipboard.writeText(fetcher.data.shareUrl);
-      shopify.toast.show("Lien de partage copié (valide 7 jours)");
+      const expiry = fetcher.data.expiresAt
+        ? new Date(fetcher.data.expiresAt).toLocaleDateString("fr-FR")
+        : "7 jours";
+      shopify.toast.show(`Lien copié — valide jusqu'au ${expiry}`);
     }
   }, [fetcher.data, shopify]);
 
-  // Le téléchargement passe par fetch (App Bridge ajoute le jeton de session)
-  // puis un Blob : ouvrir la route dans un nouvel onglet perdrait
-  // l'authentification embarquée et afficherait une page blanche.
   const downloadReport = async (auditId) => {
     try {
       const response = await fetch(`/app/report/${auditId}`);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const html = await response.text();
       const blob = new Blob([html], { type: "text/html;charset=utf-8" });
       const url = URL.createObjectURL(blob);
@@ -99,7 +166,7 @@ export default function HistoryPage() {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-    } catch (error) {
+    } catch {
       shopify.toast.show("Échec du téléchargement du rapport", {
         isError: true,
       });
@@ -113,6 +180,7 @@ export default function HistoryPage() {
           <s-paragraph>Aucun audit complété.</s-paragraph>
         ) : (
           <s-stack direction="block" gap="base">
+            <ScoreChart audits={audits} />
             {audits.map((audit) => (
               <s-box
                 key={audit.id}
@@ -125,6 +193,7 @@ export default function HistoryPage() {
                     <s-text type="strong">
                       {new Date(audit.startedAt).toLocaleString("fr-FR")}
                     </s-text>
+                    <s-badge tone="info">{audit.score}/100</s-badge>
                     <s-badge
                       tone={
                         audit.overallStatus === "COMPLIANT"
@@ -136,13 +205,16 @@ export default function HistoryPage() {
                     >
                       {STATUS_LABEL[audit.overallStatus] ?? audit.overallStatus}
                     </s-badge>
-                    <s-badge>{audit.trigger}</s-badge>
+                    <s-badge>{audit.triggerLabel}</s-badge>
                   </s-stack>
                   <s-paragraph color="subdued">
                     {audit.rulesPassed} conformes · {audit.rulesFailed} échecs ·{" "}
                     {audit.rulesWarning} avertissements
                   </s-paragraph>
                   <s-stack direction="inline" gap="base">
+                    <s-button href={`/app/audit/${audit.id}`} variant="primary">
+                      Voir le détail
+                    </s-button>
                     {features.htmlReports ? (
                       <s-button
                         onClick={() => downloadReport(audit.id)}
