@@ -86,9 +86,9 @@ export const action = async ({ request }) => {
 };
 
 function ScoreChart({ audits }) {
-  if (audits.length < 2) return null;
+  if (audits.length === 0) return null;
   const ordered = [...audits].reverse().slice(-10);
-  const max = 100;
+  const chartHeight = 100;
 
   return (
     <s-box padding="base" borderWidth="base" borderRadius="base">
@@ -98,40 +98,64 @@ function ScoreChart({ audits }) {
           display: "flex",
           alignItems: "flex-end",
           gap: "8px",
-          height: "120px",
           marginTop: "12px",
         }}
       >
-        {ordered.map((audit) => (
-          <div
-            key={audit.id}
-            style={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "4px",
-            }}
-            title={`${new Date(audit.startedAt).toLocaleDateString("fr-FR")} — ${audit.score}/100`}
-          >
+        {ordered.map((audit) => {
+          const barHeight = Math.max(
+            6,
+            Math.round((audit.score / 100) * chartHeight),
+          );
+          const color =
+            audit.score >= 80
+              ? "#29845a"
+              : audit.score >= 50
+                ? "#b98900"
+                : "#e51c00";
+
+          return (
             <div
+              key={audit.id}
               style={{
-                width: "100%",
-                height: `${Math.max(8, (audit.score / max) * 100)}%`,
-                background:
-                  audit.score >= 80
-                    ? "#29845a"
-                    : audit.score >= 50
-                      ? "#b98900"
-                      : "#e51c00",
-                borderRadius: "4px 4px 0 0",
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                height: `${chartHeight + 40}px`,
+                minWidth: 0,
               }}
-            />
-            <span style={{ fontSize: "10px", color: "#6d7175" }}>
-              {audit.score}
-            </span>
-          </div>
-        ))}
+              title={`${new Date(audit.startedAt).toLocaleDateString("fr-FR")} — ${audit.score}/100`}
+            >
+              <div
+                style={{
+                  width: "100%",
+                  maxWidth: 56,
+                  height: `${barHeight}px`,
+                  background: color,
+                  borderRadius: "4px 4px 0 0",
+                }}
+              />
+              <span
+                style={{ fontSize: "11px", fontWeight: 600, marginTop: 4 }}
+              >
+                {audit.score}
+              </span>
+              <span
+                style={{
+                  fontSize: "10px",
+                  color: "#6d7175",
+                  textAlign: "center",
+                }}
+              >
+                {new Date(audit.startedAt).toLocaleDateString("fr-FR", {
+                  day: "numeric",
+                  month: "short",
+                })}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </s-box>
   );
