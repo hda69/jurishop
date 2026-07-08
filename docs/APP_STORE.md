@@ -43,6 +43,26 @@ Champs du formulaire **Store management › Security › Legal**. Ne cochez que 
 
 JuriShop n’ajoute pas de case à cocher checkout, pop-ups, couleurs ni polices sur la boutique. C’est un outil d’audit en lecture seule.
 
+**Tiroir déroulant Customization** (si affiché malgré « Non applicable ») : **ne sélectionnez aucune option**.
+
+| Option du menu | Cocher ? |
+|----------------|----------|
+| Boutons | ❌ |
+| CSS personnalisées | ❌ |
+| Cases à cocher | ❌ |
+| Ciblage de produit | ❌ |
+| Code personnalisé | ❌ |
+| Couleur et police | ❌ |
+| Enregistrer mes informations | ❌ |
+| Géolocalisation | ❌ |
+| Multilingue | ❌ |
+| Pop-ups | ❌ |
+| Position du widget | ❌ |
+| Restriction de page | ❌ |
+| Texte personnalisé | ❌ |
+
+Le badge HTML (score conformité) est copié manuellement par le marchand — ce n’est pas un widget ni une personnalisation checkout gérée par l’app.
+
 ### Compliance — Conformité
 
 **Minimum 1 tag obligatoire.** Liste exacte du formulaire Partner Dashboard :
