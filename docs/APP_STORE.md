@@ -8,7 +8,7 @@ Document de travail pour la soumission sur le [Shopify App Store](https://shopif
 |-------|--------|
 | App URL | `https://jurishop-production.up.railway.app` |
 | Politique de confidentialité | `https://jurishop-production.up.railway.app/privacy` |
-| Support (email ou URL) | _à compléter — ex. support@votredomaine.fr_ |
+| Support (email ou URL) | Variable `SUPPORT_EMAIL` sur Railway — ex. `support@votredomaine.fr` |
 
 ---
 
@@ -327,7 +327,7 @@ Webhooks GDPR : customers/data_request, customers/redact, shop/redact — config
 
 Politique de confidentialité : https://jurishop-production.up.railway.app/privacy
 
-Contact support : [VOTRE EMAIL]
+Contact support : [même adresse que SUPPORT_EMAIL sur Railway]
 ```
 
 ---
@@ -340,8 +340,13 @@ Contact support : [VOTRE EMAIL]
 - [ ] App URL = `https://jurishop-production.up.railway.app`
 - [ ] Redirect URLs alignées avec `shopify.app.toml`
 - [ ] `shopify app deploy` récent (webhooks GDPR OK — version **jurishop-6**+)
-- [ ] Plans de facturation créés : **JuriShop Pro** (24 €), **JuriShop Expert** (59 €), essai 14 jours
-- [ ] En production réelle : `SHOPIFY_BILLING_TEST=false` sur Railway
+- [ ] Plans de facturation créés dans Partner Dashboard :
+  - **JuriShop Pro** — 24 €/mois et **240 €/an** (2 mois offerts), essai 14 jours
+  - **JuriShop Expert** — 59 €/mois et **590 €/an** (2 mois offerts), essai 14 jours
+  - Noms exacts alignés avec le code (`JuriShop Pro`, `JuriShop Pro Annuel`, etc.)
+- [ ] `SHOPIFY_BILLING_TEST=false` sur Railway (production réelle)
+- [ ] `SUPPORT_EMAIL` défini sur Railway (affiché sur `/privacy`)
+- [ ] `shopify app deploy` après changement de `api_version` webhooks (`2026-07`, aligné Admin API)
 
 ### Contenu fiche
 
@@ -376,7 +381,7 @@ Contact support : [VOTRE EMAIL]
 ### Juridique & communication
 
 - [ ] Disclaimer « pas un avocat » visible dans l’app (recommandations + rapports)
-- [ ] Politique de confidentialité : **remplacer le contact générique** par votre email réel
+- [ ] `SUPPORT_EMAIL` défini sur Railway (affiché automatiquement sur `/privacy`)
 - [ ] Ne pas promettre « conformité garantie » ou « certification officielle »
 
 ### Après soumission

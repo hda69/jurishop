@@ -34,7 +34,7 @@ if (!appUrl && process.env.NODE_ENV === "production") {
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
-  apiVersion: ApiVersion.October25,
+  apiVersion: ApiVersion.July26,
   scopes: process.env.SCOPES?.split(","),
   appUrl,
   authPathPrefix: "/auth",
@@ -90,8 +90,22 @@ const shopify = shopifyApp({
     : {}),
 });
 
+if (process.env.NODE_ENV === "production") {
+  if (process.env.SHOPIFY_BILLING_TEST === "true") {
+    console.error(
+      "[JuriShop] SHOPIFY_BILLING_TEST=true en production — " +
+        "désactivez pour activer la facturation réelle.",
+    );
+  }
+  if (!process.env.SUPPORT_EMAIL?.trim()) {
+    console.warn(
+      "[JuriShop] SUPPORT_EMAIL non défini — requis pour /privacy et la fiche App Store.",
+    );
+  }
+}
+
 export default shopify;
-export const apiVersion = ApiVersion.October25;
+export const apiVersion = ApiVersion.July26;
 export const addDocumentResponseHeaders = shopify.addDocumentResponseHeaders;
 export const authenticate = shopify.authenticate;
 export const unauthenticated = shopify.unauthenticated;

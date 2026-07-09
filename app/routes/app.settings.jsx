@@ -275,6 +275,10 @@ export default function SettingsPage() {
               Score : <s-text type="strong">{score}/100</s-text>
               {score >= 80 ? " — badge disponible" : " — minimum 80 requis"}
             </s-paragraph>
+            <s-paragraph color="subdued">
+              Le badge indique un score d&apos;audit indicatif — ce n&apos;est
+              pas une certification juridique.
+            </s-paragraph>
             <s-switch
               label="Activer le badge JuriShop"
               name="badgeEnabled"

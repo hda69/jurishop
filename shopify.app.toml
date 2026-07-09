@@ -13,7 +13,7 @@ name = "jurishop"
 scopes = "read_products,read_content,read_online_store_pages,read_legal_policies,read_markets,read_themes"
 
 [webhooks]
-api_version = "2026-10"
+api_version = "2026-07"
 
   [[webhooks.subscriptions]]
   uri = "/webhooks/app/uninstalled"

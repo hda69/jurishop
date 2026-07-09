@@ -1,4 +1,13 @@
+import { useLoaderData } from "react-router";
+import { getSupportEmail } from "../utils/support.server.js";
+
+export const loader = async () => ({
+  supportEmail: getSupportEmail(),
+});
+
 export default function PrivacyPage() {
+  const { supportEmail } = useLoaderData();
+
   return (
     <html lang="fr">
       <head>
@@ -15,7 +24,8 @@ export default function PrivacyPage() {
         <p>
           JuriShop est une application Shopify d&apos;audit de conformité légale
           en mode lecture seule. Nous n&apos;accédons pas aux données de vos
-          clients finaux (acheteurs).
+          clients finaux (acheteurs). Nous n&apos;utilisons pas de service
+          d&apos;intelligence artificielle générative.
         </p>
         <h2>Données collectées</h2>
         <ul>
@@ -29,16 +39,30 @@ export default function PrivacyPage() {
           Fournir le service d&apos;audit, les recommandations, les rapports et
           la facturation. Aucune revente de données.
         </p>
+        <h2>Sous-traitants</h2>
+        <ul>
+          <li>Shopify — hébergement de l&apos;app embarquée et facturation</li>
+          <li>Railway — hébergement de l&apos;application et base de données</li>
+          <li>API SIRENE (data.gouv.fr) — recherche SIRET sur demande (plan Expert)</li>
+          <li>Resend — envoi d&apos;alertes email optionnelles</li>
+        </ul>
         <h2>Conservation et suppression</h2>
         <p>
           Les données sont supprimées lors de la désinstallation de l&apos;app ou
           sur demande via les webhooks Shopify obligatoires (shop/redact).
         </p>
         <h2>Contact</h2>
-        <p>
-          Pour toute question : utilisez le support de votre fiche App Store ou
-          contactez l&apos;éditeur de l&apos;application.
-        </p>
+        {supportEmail ? (
+          <p>
+            Pour toute question :{" "}
+            <a href={`mailto:${supportEmail}`}>{supportEmail}</a>
+          </p>
+        ) : (
+          <p>
+            Pour toute question : contactez le support via la fiche App Store
+            JuriShop.
+          </p>
+        )}
         <p>
           <em>Dernière mise à jour : juillet 2026</em>
         </p>

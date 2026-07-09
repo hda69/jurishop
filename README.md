@@ -44,7 +44,8 @@ shopify app dev
 | `SHOPIFY_API_SECRET` | Secret API |
 | `SHOPIFY_APP_URL` | URL publique de l'app (tunnel en dev) |
 | `DATABASE_URL` | Connexion PostgreSQL |
-| `SHOPIFY_BILLING_TEST` | `true` pour facturation test sur dev stores |
+| `SHOPIFY_BILLING_TEST` | `true` en dev ; **`false` obligatoire en production réelle** |
+| `SUPPORT_EMAIL` | Email support App Store + `/privacy` (ex. `support@votre-domaine.fr`) |
 | `RESEND_API_KEY` | *(optionnel)* Alertes email |
 | `ALERT_EMAIL_FROM` | *(optionnel)* Expéditeur des alertes |
 | `RAILWAY_PUBLIC_DOMAIN` | *(prod Railway)* Fallback pour `SHOPIFY_APP_URL` |

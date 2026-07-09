@@ -443,8 +443,8 @@ function resolveAppPublicUrl() {
 export function getBadgeSnippet(profile, score) {
   if (!profile?.badgeEnabled || score < 80) return null;
   const href = resolveAppPublicUrl() || "#";
-  return `<!-- JuriShop Badge -->
-<a href="${href}" target="_blank" rel="noopener" style="font-size:12px;color:#666;text-decoration:none;">
-  ✓ Conformité vérifiée par JuriShop (${score}/100)
+  return `<!-- JuriShop Badge — audit indicatif, non juridique -->
+<a href="${href}" target="_blank" rel="noopener" style="font-size:12px;color:#666;text-decoration:none;" title="Audit indicatif — non juridique">
+  Score conformité JuriShop : ${score}/100
 </a>`;
 }
