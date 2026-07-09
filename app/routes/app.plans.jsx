@@ -4,12 +4,10 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { useEffect } from "react";
 import {
   authenticate,
-  EXPERT_ANNUAL_PLAN,
   EXPERT_PLAN,
-  PRO_ANNUAL_PLAN,
   PRO_PLAN,
 } from "../shopify.server";
-import { PLAN_IDS, PLAN_MARKETING, PLAN_PRICING } from "../billing/plans.constants.js";
+import { PLAN_IDS, PLAN_MARKETING } from "../billing/plans.constants.js";
 import { PLAN_COMPARISON_ROWS } from "../billing/plans.comparison.js";
 import { isBillingTestMode } from "../billing/plans.server.js";
 import {
@@ -62,14 +60,6 @@ export const action = async ({ request }) => {
     });
   }
 
-  if (intent === "subscribe_pro_annual") {
-    return billing.request({
-      plan: PRO_ANNUAL_PLAN,
-      isTest: test,
-      returnUrl,
-    });
-  }
-
   if (intent === "subscribe_expert") {
     return billing.request({
       plan: EXPERT_PLAN,
@@ -78,17 +68,9 @@ export const action = async ({ request }) => {
     });
   }
 
-  if (intent === "subscribe_expert_annual") {
-    return billing.request({
-      plan: EXPERT_ANNUAL_PLAN,
-      isTest: test,
-      returnUrl,
-    });
-  }
-
   if (intent === "select_free") {
     const check = await billing.check({
-      plans: [PRO_PLAN, PRO_ANNUAL_PLAN, EXPERT_PLAN, EXPERT_ANNUAL_PLAN],
+      plans: [PRO_PLAN, EXPERT_PLAN],
       isTest: test,
     });
 
@@ -194,51 +176,25 @@ export default function PlansPage() {
                   )}
 
                   {item.id === PLAN_IDS.PRO && !isCurrent && (
-                    <s-stack direction="block" gap="small">
-                      <fetcher.Form method="post">
-                        <input type="hidden" name="intent" value="subscribe_pro" />
-                        <s-button type="submit" variant="primary">
-                          Pro mensuel — 24 €/mois (14 jours d&apos;essai)
-                        </s-button>
-                      </fetcher.Form>
-                      <fetcher.Form method="post">
-                        <input
-                          type="hidden"
-                          name="intent"
-                          value="subscribe_pro_annual"
-                        />
-                        <s-button type="submit" variant="secondary">
-                          Pro annuel — {PLAN_PRICING[PLAN_IDS.PRO].annualLabel} (
-                          {PLAN_PRICING[PLAN_IDS.PRO].annualSavings})
-                        </s-button>
-                      </fetcher.Form>
-                    </s-stack>
+                    <fetcher.Form method="post">
+                      <input type="hidden" name="intent" value="subscribe_pro" />
+                      <s-button type="submit" variant="primary">
+                        Passer au plan Pro — 14 jours d&apos;essai
+                      </s-button>
+                    </fetcher.Form>
                   )}
 
                   {item.id === PLAN_IDS.EXPERT && !isCurrent && (
-                    <s-stack direction="block" gap="small">
-                      <fetcher.Form method="post">
-                        <input
-                          type="hidden"
-                          name="intent"
-                          value="subscribe_expert"
-                        />
-                        <s-button type="submit" variant="primary">
-                          Expert mensuel — 59 €/mois (14 jours d&apos;essai)
-                        </s-button>
-                      </fetcher.Form>
-                      <fetcher.Form method="post">
-                        <input
-                          type="hidden"
-                          name="intent"
-                          value="subscribe_expert_annual"
-                        />
-                        <s-button type="submit" variant="secondary">
-                          Expert annuel — {PLAN_PRICING[PLAN_IDS.EXPERT].annualLabel}{" "}
-                          ({PLAN_PRICING[PLAN_IDS.EXPERT].annualSavings})
-                        </s-button>
-                      </fetcher.Form>
-                    </s-stack>
+                    <fetcher.Form method="post">
+                      <input
+                        type="hidden"
+                        name="intent"
+                        value="subscribe_expert"
+                      />
+                      <s-button type="submit" variant="primary">
+                        Passer au plan Expert — 14 jours d&apos;essai
+                      </s-button>
+                    </fetcher.Form>
                   )}
                 </s-stack>
               </s-box>
@@ -299,9 +255,9 @@ export default function PlansPage() {
           votre facture Shopify.
         </s-paragraph>
         <s-paragraph color="subdued">
-          Essai gratuit de 14 jours sur les plans Pro et Expert (mensuel ou
-          annuel). L&apos;abonnement annuel équivaut à 10 mois facturés (2 mois
-          offerts). Annulation possible à tout moment depuis cette page.
+          Essai gratuit de 14 jours sur Pro et Expert. Sur la page de
+          confirmation Shopify, vous pouvez choisir la facturation mensuelle ou
+          annuelle (2 mois offerts). Annulation possible à tout moment.
         </s-paragraph>
       </s-section>
     </s-page>

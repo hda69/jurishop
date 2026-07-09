@@ -1,14 +1,8 @@
 export const PRO_PLAN = "JuriShop Pro";
 export const EXPERT_PLAN = "JuriShop Expert";
-export const PRO_ANNUAL_PLAN = "JuriShop Pro Annuel";
-export const EXPERT_ANNUAL_PLAN = "JuriShop Expert Annuel";
 
-export const ALL_PAID_PLANS = [
-  PRO_PLAN,
-  PRO_ANNUAL_PLAN,
-  EXPERT_PLAN,
-  EXPERT_ANNUAL_PLAN,
-];
+/** Noms exacts des 2 plans payants — alignés avec le Partner Dashboard (3 plans au total). */
+export const ALL_PAID_PLANS = [PRO_PLAN, EXPERT_PLAN];
 
 export const PLAN_IDS = {
   FREE: "FREE",
@@ -36,6 +30,11 @@ export const PLAN_PRICING = {
   },
 };
 
+function formatPaidPlanPrice(planId) {
+  const p = PLAN_PRICING[planId];
+  return `${p.label} — ou ${p.annualLabel} (${p.annualSavings})`;
+}
+
 export const PLAN_MARKETING = [
   {
     id: PLAN_IDS.FREE,
@@ -52,7 +51,7 @@ export const PLAN_MARKETING = [
   {
     id: PLAN_IDS.PRO,
     name: "Pro",
-    price: `${PLAN_PRICING[PLAN_IDS.PRO].label} ou ${PLAN_PRICING[PLAN_IDS.PRO].annualLabel}`,
+    price: formatPaidPlanPrice(PLAN_IDS.PRO),
     description: "Pour les boutiques qui veulent rester conformes au quotidien.",
     features: [
       "Audits illimités",
@@ -67,7 +66,7 @@ export const PLAN_MARKETING = [
   {
     id: PLAN_IDS.EXPERT,
     name: "Expert",
-    price: `${PLAN_PRICING[PLAN_IDS.EXPERT].label} ou ${PLAN_PRICING[PLAN_IDS.EXPERT].annualLabel}`,
+    price: formatPaidPlanPrice(PLAN_IDS.EXPERT),
     description: "Pour les marchands exigeants et les structures identifiées (SARL, SAS…).",
     features: [
       "Tout le plan Pro",

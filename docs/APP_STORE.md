@@ -340,10 +340,10 @@ Contact support : [même adresse que SUPPORT_EMAIL sur Railway]
 - [ ] App URL = `https://jurishop-production.up.railway.app`
 - [ ] Redirect URLs alignées avec `shopify.app.toml`
 - [ ] `shopify app deploy` récent (webhooks GDPR OK — version **jurishop-6**+)
-- [ ] Plans de facturation créés dans Partner Dashboard :
-  - **JuriShop Pro** — 24 €/mois et **240 €/an** (2 mois offerts), essai 14 jours
-  - **JuriShop Expert** — 59 €/mois et **590 €/an** (2 mois offerts), essai 14 jours
-  - Noms exacts alignés avec le code (`JuriShop Pro`, `JuriShop Pro Annuel`, etc.)
+- [ ] **3 plans** dans Partner Dashboard App Pricing (alignés avec le code) :
+  - **Gratuit** — 0 €
+  - **JuriShop Pro** — 24 €/mois + option annuelle **240 €/an** (réduction 2 mois), essai 14 jours
+  - **JuriShop Expert** — 59 €/mois + option annuelle **590 €/an** (réduction 2 mois), essai 14 jours
 - [ ] `SHOPIFY_BILLING_TEST=false` sur Railway (production réelle)
 - [ ] `SUPPORT_EMAIL` défini sur Railway (affiché sur `/privacy`)
 - [ ] `shopify app deploy` après changement de `api_version` webhooks (`2026-07`, aligné Admin API)
