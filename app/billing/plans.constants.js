@@ -1,9 +1,20 @@
-/** Noms Billing API — doivent correspondre exactement au Partner Dashboard App Pricing. */
+/** Mensuel — identifiant Partner Dashboard App Pricing. */
 export const PRO_PLAN = "jurishop-pro";
 export const EXPERT_PLAN = "jurishop-expert";
 
-/** Noms exacts des 2 plans payants — alignés avec le Partner Dashboard (3 plans au total). */
-export const ALL_PAID_PLANS = [PRO_PLAN, EXPERT_PLAN];
+/**
+ * Annuel — clés Billing API (souvent à créer aussi dans App Pricing).
+ * L’option annuelle du Partner Dashboard ne s’applique pas seule à billing.request().
+ */
+export const PRO_ANNUAL_PLAN = "jurishop-pro-annual";
+export const EXPERT_ANNUAL_PLAN = "jurishop-expert-annual";
+
+export const ALL_PAID_PLANS = [
+  PRO_PLAN,
+  PRO_ANNUAL_PLAN,
+  EXPERT_PLAN,
+  EXPERT_ANNUAL_PLAN,
+];
 
 export const PLAN_IDS = {
   FREE: "FREE",

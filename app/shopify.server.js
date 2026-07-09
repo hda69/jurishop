@@ -7,9 +7,14 @@ import {
 } from "@shopify/shopify-app-react-router/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
-import { EXPERT_PLAN, PRO_PLAN } from "./billing/plans.server.js";
+import {
+  EXPERT_ANNUAL_PLAN,
+  EXPERT_PLAN,
+  PRO_ANNUAL_PLAN,
+  PRO_PLAN,
+} from "./billing/plans.server.js";
 
-export { PRO_PLAN, EXPERT_PLAN };
+export { PRO_PLAN, PRO_ANNUAL_PLAN, EXPERT_PLAN, EXPERT_ANNUAL_PLAN };
 
 function resolveAppUrl() {
   if (process.env.SHOPIFY_APP_URL) {
@@ -40,8 +45,8 @@ const shopify = shopifyApp({
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
-  // 3 plans Partner Dashboard : Gratuit + Pro + Expert.
-  // Tarif annuel (240 € / 590 €) configuré dans App Pricing — choix sur la page Shopify.
+  // Fiche App Store : 3 plans (Gratuit + Pro + Expert avec option annuelle affichée).
+  // Billing API in-app : 4 clés — l’annuel doit être demandé via billing.request dédié.
   billing: {
     [PRO_PLAN]: {
       trialDays: 14,
@@ -53,6 +58,16 @@ const shopify = shopifyApp({
         },
       ],
     },
+    [PRO_ANNUAL_PLAN]: {
+      trialDays: 14,
+      lineItems: [
+        {
+          amount: 240,
+          currencyCode: "EUR",
+          interval: BillingInterval.Annual,
+        },
+      ],
+    },
     [EXPERT_PLAN]: {
       trialDays: 14,
       lineItems: [
@@ -60,6 +75,16 @@ const shopify = shopifyApp({
           amount: 59,
           currencyCode: "EUR",
           interval: BillingInterval.Every30Days,
+        },
+      ],
+    },
+    [EXPERT_ANNUAL_PLAN]: {
+      trialDays: 14,
+      lineItems: [
+        {
+          amount: 590,
+          currencyCode: "EUR",
+          interval: BillingInterval.Annual,
         },
       ],
     },
