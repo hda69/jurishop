@@ -1,5 +1,6 @@
-export const PRO_PLAN = "JuriShop Pro";
-export const EXPERT_PLAN = "JuriShop Expert";
+/** Noms Billing API — doivent correspondre exactement au Partner Dashboard App Pricing. */
+export const PRO_PLAN = "jurishop-pro";
+export const EXPERT_PLAN = "jurishop-expert";
 
 /** Noms exacts des 2 plans payants — alignés avec le Partner Dashboard (3 plans au total). */
 export const ALL_PAID_PLANS = [PRO_PLAN, EXPERT_PLAN];
