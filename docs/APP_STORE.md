@@ -249,8 +249,8 @@ JuriShop est un outil d’**audit et de recommandation**. Il ne remplace pas un 
 | Plan | Prix | Essentiel |
 |------|------|-----------|
 | **Gratuit** | 0 € | 1 audit/mois, pack France, score global |
-| **Pro** | 24 €/mois | Audits illimités, UE, rapports, webhooks — **14 jours d’essai** |
-| **Expert** | 59 €/mois | SIRENE, multi-marchés BE/CH/LU, mode expert — **14 jours d’essai** |
+| **Pro** | 24 €/mois ou **240 €/an** | Audits illimités, UE, rapports, webhooks — **14 jours d’essai** |
+| **Expert** | 59 €/mois ou **590 €/an** | SIRENE, multi-marchés BE/CH/LU, mode expert — **14 jours d’essai** |
 
 La facturation passe par votre facture Shopify.
 

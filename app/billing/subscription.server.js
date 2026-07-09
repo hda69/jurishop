@@ -2,7 +2,6 @@ import prisma from "../db.server.js";
 import {
   BILLING_PLANS,
   effectivePlanFromProfile,
-  EXPERT_PLAN,
   getEffectivePlanFeatures,
   getPlanFeatures,
   isBillingTestMode,
@@ -10,7 +9,6 @@ import {
   pickPaidPlanFromSubscriptions,
   planFromSubscriptionName,
   PLAN_IDS,
-  PRO_PLAN,
 } from "./plans.server.js";
 
 function currentMonthKey() {

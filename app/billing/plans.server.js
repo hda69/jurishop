@@ -1,14 +1,26 @@
 import {
+  ALL_PAID_PLANS,
+  EXPERT_ANNUAL_PLAN,
   EXPERT_PLAN,
   PLAN_IDS,
   PLAN_MARKETING,
   PLAN_PRICING,
+  PRO_ANNUAL_PLAN,
   PRO_PLAN,
 } from "./plans.constants.js";
 
-export { PRO_PLAN, EXPERT_PLAN, PLAN_IDS, PLAN_MARKETING, PLAN_PRICING };
+export {
+  PRO_PLAN,
+  PRO_ANNUAL_PLAN,
+  EXPERT_PLAN,
+  EXPERT_ANNUAL_PLAN,
+  ALL_PAID_PLANS,
+  PLAN_IDS,
+  PLAN_MARKETING,
+  PLAN_PRICING,
+};
 
-export const BILLING_PLANS = [PRO_PLAN, EXPERT_PLAN];
+export const BILLING_PLANS = ALL_PAID_PLANS;
 
 const PLAN_FEATURES = {
   [PLAN_IDS.FREE]: {
@@ -57,8 +69,8 @@ export function getPlanFeatures(planId) {
 }
 
 export function planFromSubscriptionName(name) {
-  if (name === EXPERT_PLAN) return PLAN_IDS.EXPERT;
-  if (name === PRO_PLAN) return PLAN_IDS.PRO;
+  if (name === EXPERT_PLAN || name === EXPERT_ANNUAL_PLAN) return PLAN_IDS.EXPERT;
+  if (name === PRO_PLAN || name === PRO_ANNUAL_PLAN) return PLAN_IDS.PRO;
   return PLAN_IDS.FREE;
 }
 
@@ -75,7 +87,7 @@ export function pickPaidPlanFromSubscriptions(appSubscriptions = []) {
   const paidSubs = appSubscriptions.filter(
     (sub) =>
       sub.status === PAID_SUBSCRIPTION_STATUS &&
-      (sub.name === PRO_PLAN || sub.name === EXPERT_PLAN),
+      ALL_PAID_PLANS.includes(sub.name),
   );
 
   if (paidSubs.length === 0) {
@@ -83,8 +95,8 @@ export function pickPaidPlanFromSubscriptions(appSubscriptions = []) {
   }
 
   const subscription =
-    paidSubs.find((s) => s.name === EXPERT_PLAN) ??
-    paidSubs.find((s) => s.name === PRO_PLAN) ??
+    paidSubs.find((s) => s.name === EXPERT_PLAN || s.name === EXPERT_ANNUAL_PLAN) ??
+    paidSubs.find((s) => s.name === PRO_PLAN || s.name === PRO_ANNUAL_PLAN) ??
     paidSubs[0];
 
   return {
