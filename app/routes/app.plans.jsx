@@ -72,6 +72,15 @@ export default function PlansPage() {
   const shopify = useAppBridge();
   const appPricing = billingMode === "app_pricing";
 
+  const openShopifyPricing = () => {
+    if (!planSelectionUrl) return;
+    if (window.top) {
+      window.top.location.href = planSelectionUrl;
+    } else {
+      window.location.href = planSelectionUrl;
+    }
+  };
+
   useEffect(() => {
     if (billingSucceeded) {
       shopify.toast.show("Abonnement activé avec succès");
@@ -133,7 +142,13 @@ export default function PlansPage() {
                     ))}
                   </s-stack>
 
-                  {item.id === PLAN_IDS.FREE && !isCurrent && (
+                  {item.id === PLAN_IDS.FREE && !isCurrent && appPricing && (
+                    <s-button variant="secondary" onClick={openShopifyPricing}>
+                      Revenir au plan Gratuit (via Shopify)
+                    </s-button>
+                  )}
+
+                  {item.id === PLAN_IDS.FREE && !isCurrent && !appPricing && (
                     <fetcher.Form method="post">
                       <input type="hidden" name="intent" value="select_free" />
                       <s-button
@@ -141,7 +156,6 @@ export default function PlansPage() {
                         variant="secondary"
                         onClick={(e) => {
                           if (
-                            !appPricing &&
                             !window.confirm(
                               "Revenir au plan Gratuit ? Votre abonnement payant sera annulé.",
                             )
@@ -150,9 +164,7 @@ export default function PlansPage() {
                           }
                         }}
                       >
-                        {appPricing
-                          ? "Revenir au plan Gratuit (via Shopify)"
-                          : "Revenir au plan Gratuit"}
+                        Revenir au plan Gratuit
                       </s-button>
                     </fetcher.Form>
                   )}
@@ -180,12 +192,9 @@ export default function PlansPage() {
                   )}
 
                   {item.id === PLAN_IDS.PRO && !isCurrent && appPricing && (
-                    <fetcher.Form method="post">
-                      <input type="hidden" name="intent" value="subscribe_pro" />
-                      <s-button type="submit" variant="primary">
-                        Choisir Pro sur Shopify
-                      </s-button>
-                    </fetcher.Form>
+                    <s-button variant="primary" onClick={openShopifyPricing}>
+                      Choisir Pro sur Shopify
+                    </s-button>
                   )}
 
                   {item.id === PLAN_IDS.EXPERT && !isCurrent && !appPricing && (
@@ -215,16 +224,9 @@ export default function PlansPage() {
                   )}
 
                   {item.id === PLAN_IDS.EXPERT && !isCurrent && appPricing && (
-                    <fetcher.Form method="post">
-                      <input
-                        type="hidden"
-                        name="intent"
-                        value="subscribe_expert"
-                      />
-                      <s-button type="submit" variant="primary">
-                        Choisir Expert sur Shopify
-                      </s-button>
-                    </fetcher.Form>
+                    <s-button variant="primary" onClick={openShopifyPricing}>
+                      Choisir Expert sur Shopify
+                    </s-button>
                   )}
                 </s-stack>
               </s-box>
@@ -285,11 +287,9 @@ export default function PlansPage() {
               Les plans sont gérés par la page officielle Shopify (App Pricing).
             </s-paragraph>
             {planSelectionUrl && (
-              <s-paragraph color="subdued">
-                <a href={planSelectionUrl} target="_top" rel="noreferrer">
-                  Ouvrir la page forfaits Shopify
-                </a>
-              </s-paragraph>
+              <s-button variant="secondary" onClick={openShopifyPricing}>
+                Ouvrir la page forfaits Shopify
+              </s-button>
             )}
           </>
         ) : (

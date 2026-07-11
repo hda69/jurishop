@@ -1,3 +1,23 @@
+/** activeSubscription attend gid://shopify/App/id et gid://shopify/Shop/id (docs Shopify). */
+export function normalizePartnerGid(raw, modelName) {
+  if (!raw) return null;
+  const value = String(raw).trim();
+  if (!value) return null;
+
+  if (/^gid:\/\/shopify\/\w+\/\d+$/.test(value)) return value;
+
+  const legacyPartners = value.match(/^gid:\/\/partners\/(\w+)\/(\d+)$/);
+  if (legacyPartners) {
+    return `gid://shopify/${legacyPartners[1]}/${legacyPartners[2]}`;
+  }
+
+  if (/^\d+$/.test(value)) {
+    return `gid://shopify/${modelName}/${value}`;
+  }
+
+  return value;
+}
+
 const PARTNER_API_VERSION = "2026-07";
 
 const ACTIVE_SUBSCRIPTION_QUERY = `#graphql
@@ -9,29 +29,6 @@ const ACTIVE_SUBSCRIPTION_QUERY = `#graphql
     }
   }
 `;
-
-/** Partner API attend gid://partners/Model/id (pas un ID nu ni gid://shopify/…). */
-export function normalizePartnerGid(raw, modelName) {
-  if (!raw) return null;
-  const value = String(raw).trim();
-  if (!value) return null;
-
-  if (value.startsWith("gid://partners/")) return value;
-
-  const namespaced = value.match(/^gid:\/\/shopify\/(\w+)\/(\d+)$/);
-  if (namespaced) {
-    return `gid://partners/${namespaced[1]}/${namespaced[2]}`;
-  }
-
-  const partnersOther = value.match(/^gid:\/\/partners\/(\w+)\/(\d+)$/);
-  if (partnersOther) return value;
-
-  if (/^\d+$/.test(value)) {
-    return `gid://partners/${modelName}/${value}`;
-  }
-
-  return value;
-}
 
 function partnerConfig() {
   const orgId = process.env.SHOPIFY_PARTNER_ORG_ID?.trim();
@@ -82,10 +79,6 @@ async function fetchShopGid(admin) {
   return json.data?.shop?.id ?? null;
 }
 
-/**
- * Source de vérité Shopify App Pricing (Partner Dashboard).
- * billing.check() Admin API ne voit pas ces abonnements depuis 2026-07.
- */
 export async function fetchActivePlanHandleFromPartner(admin) {
   const config = partnerConfig();
   if (!config || !admin) return null;

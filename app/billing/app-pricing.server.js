@@ -31,16 +31,6 @@ export function resolveAppHandleSlug() {
 }
 
 /**
- * URL App Pricing — format recommandé quand l’ID app Partner est connu.
- * https://{shop}.myshopify.com/admin/billing/managed_pricing/plans?app_id={id}
- */
-export function buildManagedPricingUrl(session) {
-  const appId = resolvePartnerAppNumericId();
-  if (!appId) return null;
-  return `https://${session.shop}/admin/billing/managed_pricing/plans?app_id=${appId}`;
-}
-
-/**
  * URL App Pricing — format admin.shopify.com (handle = slug ou ID numérique).
  * https://admin.shopify.com/store/{store}/charges/{handle}/pricing_plans
  */
@@ -49,16 +39,31 @@ export function buildChargesPricingPlansUrl(session, handle) {
   return `https://admin.shopify.com/store/${storeHandle}/charges/${handle}/pricing_plans`;
 }
 
-export function buildAppPricingPlanSelectionUrl(session) {
-  const managed = buildManagedPricingUrl(session);
-  if (managed) return managed;
+/**
+ * URL App Pricing — fallback managed_pricing.
+ * https://{shop}.myshopify.com/admin/billing/managed_pricing/plans?app_id={id}
+ */
+export function buildManagedPricingUrl(session) {
+  const appId = resolvePartnerAppNumericId();
+  if (!appId) return null;
+  return `https://${session.shop}/admin/billing/managed_pricing/plans?app_id=${appId}`;
+}
 
+/** URLs candidates — la doc officielle utilise charges/{app_handle}/pricing_plans en premier. */
+export function buildAllPricingPlanUrls(session) {
+  const slug = resolveAppHandleSlug();
   const numericId = resolvePartnerAppNumericId();
-  if (numericId) {
-    return buildChargesPricingPlansUrl(session, numericId);
+  const urls = [buildChargesPricingPlansUrl(session, slug)];
+  if (numericId && numericId !== slug) {
+    urls.push(buildChargesPricingPlansUrl(session, numericId));
   }
+  const managed = buildManagedPricingUrl(session);
+  if (managed) urls.push(managed);
+  return [...new Set(urls)];
+}
 
-  return buildChargesPricingPlansUrl(session, resolveAppHandleSlug());
+export function buildAppPricingPlanSelectionUrl(session) {
+  return buildAllPricingPlanUrls(session)[0];
 }
 
 /** Redirige vers la page Shopify (hors iframe) pour choisir / approuver un plan. */
