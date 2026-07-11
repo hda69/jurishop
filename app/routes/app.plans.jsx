@@ -4,25 +4,19 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { useEffect } from "react";
 import {
   authenticate,
-  EXPERT_ANNUAL_PLAN,
-  EXPERT_PLAN,
-  PRO_ANNUAL_PLAN,
-  PRO_PLAN,
 } from "../shopify.server";
-import { PLAN_IDS, PLAN_MARKETING, PLAN_PRICING } from "../billing/plans.constants.js";
+import { PLAN_IDS, PLAN_MARKETING } from "../billing/plans.constants.js";
 import { PLAN_COMPARISON_ROWS } from "../billing/plans.comparison.js";
-import { isBillingTestMode } from "../billing/plans.server.js";
 import {
   resolveMerchantPlan,
-  setBillingPlanFree,
 } from "../billing/subscription.server.js";
-import { buildEmbeddedBillingReturnUrl } from "../billing/return-url.server.js";
-import { appRedirect } from "../utils/app-redirect.server.js";
+import { redirectToAppPricingPlanSelection } from "../billing/app-pricing.server.js";
 
 export const loader = async ({ request }) => {
   const url = new URL(request.url);
-  const billingReturn = url.searchParams.get("billing_return") === "1";
   const planHandle = url.searchParams.get("plan_handle");
+  const billingReturn =
+    url.searchParams.get("billing_return") === "1" || Boolean(planHandle);
 
   const { plan, features, profile } = await resolveMerchantPlan(request, authenticate, {
     planHandleFromUrl: planHandle,
@@ -54,64 +48,22 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session, billing } = await authenticate.admin(request);
+  const { session, redirect } = await authenticate.admin(request);
   const formData = await request.formData();
   const intent = formData.get("intent");
-  const returnUrl = buildEmbeddedBillingReturnUrl(session, "/app/plans", {
-    billing_return: "1",
-  });
-  const test = isBillingTestMode();
 
-  if (intent === "subscribe_pro") {
-    return billing.request({
-      plan: PRO_PLAN,
-      isTest: test,
-      returnUrl,
-    });
-  }
-
-  if (intent === "subscribe_pro_annual") {
-    return billing.request({
-      plan: PRO_ANNUAL_PLAN,
-      isTest: test,
-      returnUrl,
-    });
-  }
-
-  if (intent === "subscribe_expert") {
-    return billing.request({
-      plan: EXPERT_PLAN,
-      isTest: test,
-      returnUrl,
-    });
-  }
-
-  if (intent === "subscribe_expert_annual") {
-    return billing.request({
-      plan: EXPERT_ANNUAL_PLAN,
-      isTest: test,
-      returnUrl,
-    });
+  if (
+    intent === "subscribe_pro" ||
+    intent === "subscribe_pro_annual" ||
+    intent === "subscribe_expert" ||
+    intent === "subscribe_expert_annual" ||
+    intent === "manage_plans"
+  ) {
+    return redirectToAppPricingPlanSelection(session, redirect);
   }
 
   if (intent === "select_free") {
-    const check = await billing.check({
-      plans: [PRO_PLAN, PRO_ANNUAL_PLAN, EXPERT_PLAN, EXPERT_ANNUAL_PLAN],
-      isTest: test,
-    });
-
-    for (const sub of check.appSubscriptions) {
-      if (sub.status === "ACTIVE") {
-        await billing.cancel({
-          subscriptionId: sub.id,
-          isTest: test,
-          prorate: true,
-        });
-      }
-    }
-
-    await setBillingPlanFree(session.shop);
-    return appRedirect(request, "/app/plans");
+    return redirectToAppPricingPlanSelection(session, redirect);
   }
 
   return { ok: false };
@@ -187,70 +139,32 @@ export default function PlansPage() {
                   {item.id === PLAN_IDS.FREE && !isCurrent && (
                     <fetcher.Form method="post">
                       <input type="hidden" name="intent" value="select_free" />
-                      <s-button
-                        type="submit"
-                        variant="secondary"
-                        onClick={(e) => {
-                          if (
-                            !window.confirm(
-                              "Revenir au plan Gratuit ? Votre abonnement payant sera annulé.",
-                            )
-                          ) {
-                            e.preventDefault();
-                          }
-                        }}
-                      >
-                        Revenir au plan Gratuit
+                      <s-button type="submit" variant="secondary">
+                        Revenir au plan Gratuit (via Shopify)
                       </s-button>
                     </fetcher.Form>
                   )}
 
                   {item.id === PLAN_IDS.PRO && !isCurrent && (
-                    <s-stack direction="block" gap="small">
-                      <fetcher.Form method="post">
-                        <input type="hidden" name="intent" value="subscribe_pro" />
-                        <s-button type="submit" variant="primary">
-                          Pro mensuel — 24 €/mois (14 jours d&apos;essai)
-                        </s-button>
-                      </fetcher.Form>
-                      <fetcher.Form method="post">
-                        <input
-                          type="hidden"
-                          name="intent"
-                          value="subscribe_pro_annual"
-                        />
-                        <s-button type="submit" variant="secondary">
-                          Pro annuel — {PLAN_PRICING[PLAN_IDS.PRO].annualLabel} (
-                          {PLAN_PRICING[PLAN_IDS.PRO].annualSavings})
-                        </s-button>
-                      </fetcher.Form>
-                    </s-stack>
+                    <fetcher.Form method="post">
+                      <input type="hidden" name="intent" value="subscribe_pro" />
+                      <s-button type="submit" variant="primary">
+                        Choisir Pro sur Shopify (mensuel ou annuel)
+                      </s-button>
+                    </fetcher.Form>
                   )}
 
                   {item.id === PLAN_IDS.EXPERT && !isCurrent && (
-                    <s-stack direction="block" gap="small">
-                      <fetcher.Form method="post">
-                        <input
-                          type="hidden"
-                          name="intent"
-                          value="subscribe_expert"
-                        />
-                        <s-button type="submit" variant="primary">
-                          Expert mensuel — 59 €/mois (14 jours d&apos;essai)
-                        </s-button>
-                      </fetcher.Form>
-                      <fetcher.Form method="post">
-                        <input
-                          type="hidden"
-                          name="intent"
-                          value="subscribe_expert_annual"
-                        />
-                        <s-button type="submit" variant="secondary">
-                          Expert annuel — {PLAN_PRICING[PLAN_IDS.EXPERT].annualLabel}{" "}
-                          ({PLAN_PRICING[PLAN_IDS.EXPERT].annualSavings})
-                        </s-button>
-                      </fetcher.Form>
-                    </s-stack>
+                    <fetcher.Form method="post">
+                      <input
+                        type="hidden"
+                        name="intent"
+                        value="subscribe_expert"
+                      />
+                      <s-button type="submit" variant="primary">
+                        Choisir Expert sur Shopify (mensuel ou annuel)
+                      </s-button>
+                    </fetcher.Form>
                   )}
                 </s-stack>
               </s-box>
@@ -306,14 +220,13 @@ export default function PlansPage() {
 
       <s-section slot="aside" heading="Facturation Shopify">
         <s-paragraph>
-          En validant un plan payant, vous serez redirigé vers la page de
-          confirmation Shopify (intégrée à l&apos;admin). Le montant apparaît sur
-          votre facture Shopify.
+          Les plans sont gérés par Shopify (page officielle de facturation).
+          Vous y choisissez le plan, mensuel ou annuel, puis vous approuvez le
+          montant sur votre facture Shopify.
         </s-paragraph>
         <s-paragraph color="subdued">
-          Choisissez mensuel ou annuel ci-dessous — la page Shopify affichera le
-          montant correspondant (essai 14 jours). Annulation possible à tout
-          moment.
+          Essai 14 jours sur Pro et Expert. Annulation ou changement de plan via
+          la même page Shopify.
         </s-paragraph>
       </s-section>
     </s-page>

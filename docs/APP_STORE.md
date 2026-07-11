@@ -352,7 +352,7 @@ Contact support : [même adresse que SUPPORT_EMAIL sur Railway]
 - [ ] **Partner API** sur Railway (App Pricing — vérif abonnement après paiement) :
   - `SHOPIFY_PARTNER_ORG_ID` — ID org dans l’URL Partner Dashboard
   - `SHOPIFY_PARTNER_ACCESS_TOKEN` — token client Partner API (permission Manage apps)
-  - `SHOPIFY_APP_GID` — ex. `gid://shopify/App/1234567890`
+  - `SHOPIFY_APP_GID` — ID numérique de l’app dans l’URL Partner (ex. `394627055617`) ou `gid://partners/App/394627055617`
 - [ ] `SUPPORT_EMAIL` défini sur Railway (affiché sur `/privacy`)
 - [ ] `shopify app deploy` après changement de `api_version` webhooks (`2026-07`, aligné Admin API)
 

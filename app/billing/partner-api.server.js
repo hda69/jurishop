@@ -10,10 +10,33 @@ const ACTIVE_SUBSCRIPTION_QUERY = `#graphql
   }
 `;
 
+/** Partner API attend gid://partners/Model/id (pas un ID nu ni gid://shopify/…). */
+export function normalizePartnerGid(raw, modelName) {
+  if (!raw) return null;
+  const value = String(raw).trim();
+  if (!value) return null;
+
+  if (value.startsWith("gid://partners/")) return value;
+
+  const namespaced = value.match(/^gid:\/\/shopify\/(\w+)\/(\d+)$/);
+  if (namespaced) {
+    return `gid://partners/${namespaced[1]}/${namespaced[2]}`;
+  }
+
+  const partnersOther = value.match(/^gid:\/\/partners\/(\w+)\/(\d+)$/);
+  if (partnersOther) return value;
+
+  if (/^\d+$/.test(value)) {
+    return `gid://partners/${modelName}/${value}`;
+  }
+
+  return value;
+}
+
 function partnerConfig() {
   const orgId = process.env.SHOPIFY_PARTNER_ORG_ID?.trim();
   const token = process.env.SHOPIFY_PARTNER_ACCESS_TOKEN?.trim();
-  const appId = process.env.SHOPIFY_APP_GID?.trim();
+  const appId = normalizePartnerGid(process.env.SHOPIFY_APP_GID, "App");
   if (!orgId || !token || !appId) return null;
   return { orgId, token, appId };
 }
@@ -67,7 +90,8 @@ export async function fetchActivePlanHandleFromPartner(admin) {
   const config = partnerConfig();
   if (!config || !admin) return null;
 
-  const shopId = await fetchShopGid(admin);
+  const shopIdRaw = await fetchShopGid(admin);
+  const shopId = normalizePartnerGid(shopIdRaw, "Shop");
   if (!shopId) return null;
 
   const data = await partnerGraphql(ACTIVE_SUBSCRIPTION_QUERY, {
