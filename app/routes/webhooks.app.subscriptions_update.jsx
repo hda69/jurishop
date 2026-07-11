@@ -2,6 +2,7 @@ import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 import {
   PAID_SUBSCRIPTION_STATUS,
+  planFromPlanHandle,
   planFromSubscriptionName,
   PLAN_IDS,
 } from "../billing/plans.server.js";
@@ -19,10 +20,13 @@ export const action = async ({ request }) => {
 
   const status = subscription.status?.toUpperCase?.() ?? subscription.status;
   const name = subscription.name;
+  const planHandle = subscription.plan_handle ?? subscription.planHandle ?? name;
 
   let plan = PLAN_IDS.FREE;
   if (status === PAID_SUBSCRIPTION_STATUS) {
-    plan = planFromSubscriptionName(name);
+    const fromHandle = planFromPlanHandle(planHandle);
+    plan =
+      fromHandle !== PLAN_IDS.FREE ? fromHandle : planFromSubscriptionName(name);
   }
 
   if (plan === PLAN_IDS.FREE) {

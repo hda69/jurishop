@@ -349,6 +349,10 @@ Contact support : [même adresse que SUPPORT_EMAIL sur Railway]
   - `jurishop-expert`, `jurishop-expert-annual` (590 €/an)
   - L’option annuelle du formulaire Pro/Expert **ne pilote pas** `billing.request()` — le marchand choisit via les boutons dans l’app.
 - [ ] `SHOPIFY_BILLING_TEST=false` sur Railway (production réelle)
+- [ ] **Partner API** sur Railway (App Pricing — vérif abonnement après paiement) :
+  - `SHOPIFY_PARTNER_ORG_ID` — ID org dans l’URL Partner Dashboard
+  - `SHOPIFY_PARTNER_ACCESS_TOKEN` — token client Partner API (permission Manage apps)
+  - `SHOPIFY_APP_GID` — ex. `gid://shopify/App/1234567890`
 - [ ] `SUPPORT_EMAIL` défini sur Railway (affiché sur `/privacy`)
 - [ ] `shopify app deploy` après changement de `api_version` webhooks (`2026-07`, aligné Admin API)
 

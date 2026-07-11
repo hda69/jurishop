@@ -32,11 +32,11 @@ export const loader = async ({ request }) => {
     "../billing/plans.server.js"
   );
   const { PLAN_IDS, PLAN_MARKETING } = await import("../billing/plans.constants.js");
-  const { session, billing } = await authenticate.admin(request);
+  const { session, billing, admin } = await authenticate.admin(request);
   const { syncBillingPlanFromShopify } = await import(
     "../billing/subscription.server.js"
   );
-  await syncBillingPlanFromShopify(session.shop, billing);
+  await syncBillingPlanFromShopify(session.shop, billing, { admin });
   await ensureShopProfile(session.shop);
   const profile = serializeProfile(await getShopProfile(session.shop));
   const plan = effectivePlanFromProfile(profile);
@@ -49,11 +49,11 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session, billing } = await authenticate.admin(request);
+  const { session, billing, admin } = await authenticate.admin(request);
   const { syncBillingPlanFromShopify } = await import(
     "../billing/subscription.server.js"
   );
-  await syncBillingPlanFromShopify(session.shop, billing);
+  await syncBillingPlanFromShopify(session.shop, billing, { admin });
   const formData = await request.formData();
   const intent = formData.get("intent");
 

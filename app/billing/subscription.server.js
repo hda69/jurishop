@@ -1,4 +1,5 @@
 import prisma from "../db.server.js";
+import { fetchActivePlanHandleFromPartner } from "./partner-api.server.js";
 import {
   BILLING_PLANS,
   effectivePlanFromProfile,
@@ -7,12 +8,17 @@ import {
   isBillingTestMode,
   PAID_SUBSCRIPTION_STATUS,
   pickPaidPlanFromSubscriptions,
+  planFromPlanHandle,
   planFromSubscriptionName,
   PLAN_IDS,
 } from "./plans.server.js";
 
 function currentMonthKey() {
   return new Date().toISOString().slice(0, 7);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /** Réinitialise les réglages Pro/Expert si l'abonnement n'est plus actif. */
@@ -47,11 +53,7 @@ async function enforceFreePlanSettings(shop) {
   });
 }
 
-/**
- * Source de vérité : Billing API Shopify.
- * Met à jour le cache DB uniquement après vérification du statut ACTIVE.
- */
-export async function syncBillingPlanFromShopify(shop, billing) {
+async function ensureShopProfile(shop) {
   await prisma.shopComplianceProfile.upsert({
     where: { shop },
     create: {
@@ -61,29 +63,78 @@ export async function syncBillingPlanFromShopify(shop, billing) {
     },
     update: {},
   });
+}
 
-  const { appSubscriptions } = await billing.check({
-    plans: BILLING_PLANS,
-    isTest: isBillingTestMode(),
-  });
-
-  const { plan, subscription } = pickPaidPlanFromSubscriptions(appSubscriptions);
-
-  if (plan === PLAN_IDS.FREE) {
-    await enforceFreePlanSettings(shop);
-    return PLAN_IDS.FREE;
-  }
-
+async function persistPaidPlan(shop, plan, { subscriptionId = null, planHandle = null } = {}) {
+  await ensureShopProfile(shop);
   await prisma.shopComplianceProfile.update({
     where: { shop },
     data: {
       billingPlan: plan,
-      billingSubscriptionId: subscription.id,
-      billingSubscriptionStatus: subscription.status,
+      billingSubscriptionId: subscriptionId,
+      billingSubscriptionStatus: PAID_SUBSCRIPTION_STATUS,
     },
   });
 
-  return plan;
+  if (planHandle) {
+    console.log(`[JuriShop] Abonnement actif pour ${shop}: ${planHandle} → ${plan}`);
+  }
+}
+
+async function checkBillingApiPlan(billing) {
+  const { appSubscriptions } = await billing.check({
+    plans: BILLING_PLANS,
+    isTest: isBillingTestMode(),
+  });
+  return pickPaidPlanFromSubscriptions(appSubscriptions);
+}
+
+/**
+ * Source de vérité :
+ * 1. plan_handle (redirect Shopify App Pricing)
+ * 2. Partner API activeSubscription (App Pricing)
+ * 3. billing.check (Billing API manuelle / legacy)
+ */
+export async function syncBillingPlanFromShopify(
+  shop,
+  billing,
+  { admin = null, planHandleFromUrl = null, retryOnReturn = false } = {},
+) {
+  await ensureShopProfile(shop);
+
+  const planFromUrl = planFromPlanHandle(planHandleFromUrl);
+  if (planFromUrl !== PLAN_IDS.FREE) {
+    await persistPaidPlan(shop, planFromUrl, { planHandle: planHandleFromUrl });
+    return planFromUrl;
+  }
+
+  if (admin) {
+    const partnerHandle = await fetchActivePlanHandleFromPartner(admin);
+    const planFromPartner = planFromPlanHandle(partnerHandle);
+    if (planFromPartner !== PLAN_IDS.FREE) {
+      await persistPaidPlan(shop, planFromPartner, { planHandle: partnerHandle });
+      return planFromPartner;
+    }
+  }
+
+  const attempts = retryOnReturn ? 5 : 1;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const { plan, subscription } = await checkBillingApiPlan(billing);
+    if (plan !== PLAN_IDS.FREE) {
+      await persistPaidPlan(shop, plan, {
+        subscriptionId: subscription.id,
+        planHandle: subscription.name,
+      });
+      return plan;
+    }
+
+    if (attempt < attempts - 1) {
+      await sleep(1000);
+    }
+  }
+
+  await enforceFreePlanSettings(shop);
+  return PLAN_IDS.FREE;
 }
 
 /** Met le plan Gratuit après annulation explicite (Billing API déjà appelée). */
@@ -190,11 +241,14 @@ export function assertPlanFeature(profile, feature) {
   return { allowed: true };
 }
 
-export async function resolveMerchantPlan(request, authenticate) {
-  const { session, billing } = await authenticate.admin(request);
-  const plan = await syncBillingPlanFromShopify(session.shop, billing);
+export async function resolveMerchantPlan(request, authenticate, options = {}) {
+  const { session, billing, admin } = await authenticate.admin(request);
+  const plan = await syncBillingPlanFromShopify(session.shop, billing, {
+    admin,
+    ...options,
+  });
   const { features, profile } = await getMerchantBilling(session.shop);
-  return { session, billing, plan, features, profile };
+  return { session, billing, admin, plan, features, profile };
 }
 
 export {

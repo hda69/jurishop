@@ -5,8 +5,8 @@ import { authenticate } from "../shopify.server";
 import { syncBillingPlanFromShopify } from "../billing/subscription.server.js";
 
 export const loader = async ({ request }) => {
-  const { billing, session } = await authenticate.admin(request);
-  await syncBillingPlanFromShopify(session.shop, billing);
+  const { billing, session, admin } = await authenticate.admin(request);
+  await syncBillingPlanFromShopify(session.shop, billing, { admin });
 
   // eslint-disable-next-line no-undef
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };

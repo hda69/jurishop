@@ -68,10 +68,24 @@ export function getPlanFeatures(planId) {
   return PLAN_FEATURES[planId] ?? PLAN_FEATURES[PLAN_IDS.FREE];
 }
 
+const PLAN_HANDLE_ALIASES = {
+  [PRO_PLAN]: PLAN_IDS.PRO,
+  [PRO_ANNUAL_PLAN]: PLAN_IDS.PRO,
+  [EXPERT_PLAN]: PLAN_IDS.EXPERT,
+  [EXPERT_ANNUAL_PLAN]: PLAN_IDS.EXPERT,
+};
+
 export function planFromSubscriptionName(name) {
-  if (name === EXPERT_PLAN || name === EXPERT_ANNUAL_PLAN) return PLAN_IDS.EXPERT;
-  if (name === PRO_PLAN || name === PRO_ANNUAL_PLAN) return PLAN_IDS.PRO;
-  return PLAN_IDS.FREE;
+  if (!name) return PLAN_IDS.FREE;
+  const direct = PLAN_HANDLE_ALIASES[name];
+  if (direct) return direct;
+  const normalized = name.trim().toLowerCase();
+  return PLAN_HANDLE_ALIASES[normalized] ?? PLAN_IDS.FREE;
+}
+
+/** plan_handle renvoyé par Shopify App Pricing après approbation. */
+export function planFromPlanHandle(planHandle) {
+  return planFromSubscriptionName(planHandle);
 }
 
 export function isBillingTestMode() {
@@ -87,7 +101,7 @@ export function pickPaidPlanFromSubscriptions(appSubscriptions = []) {
   const paidSubs = appSubscriptions.filter(
     (sub) =>
       sub.status === PAID_SUBSCRIPTION_STATUS &&
-      ALL_PAID_PLANS.includes(sub.name),
+      planFromSubscriptionName(sub.name) !== PLAN_IDS.FREE,
   );
 
   if (paidSubs.length === 0) {
@@ -95,8 +109,8 @@ export function pickPaidPlanFromSubscriptions(appSubscriptions = []) {
   }
 
   const subscription =
-    paidSubs.find((s) => s.name === EXPERT_PLAN || s.name === EXPERT_ANNUAL_PLAN) ??
-    paidSubs.find((s) => s.name === PRO_PLAN || s.name === PRO_ANNUAL_PLAN) ??
+    paidSubs.find((s) => planFromSubscriptionName(s.name) === PLAN_IDS.EXPERT) ??
+    paidSubs.find((s) => planFromSubscriptionName(s.name) === PLAN_IDS.PRO) ??
     paidSubs[0];
 
   return {

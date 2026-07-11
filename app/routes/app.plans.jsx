@@ -20,9 +20,14 @@ import { buildEmbeddedBillingReturnUrl } from "../billing/return-url.server.js";
 import { appRedirect } from "../utils/app-redirect.server.js";
 
 export const loader = async ({ request }) => {
-  const { plan, features, profile } = await resolveMerchantPlan(request, authenticate);
   const url = new URL(request.url);
   const billingReturn = url.searchParams.get("billing_return") === "1";
+  const planHandle = url.searchParams.get("plan_handle");
+
+  const { plan, features, profile } = await resolveMerchantPlan(request, authenticate, {
+    planHandleFromUrl: planHandle,
+    retryOnReturn: billingReturn,
+  });
 
   return {
     plan,
@@ -30,7 +35,10 @@ export const loader = async ({ request }) => {
     plans: PLAN_MARKETING,
     billingReturn,
     billingSucceeded: billingReturn && plan !== PLAN_IDS.FREE,
-    billingCancelled: billingReturn && plan === PLAN_IDS.FREE,
+    billingPending:
+      billingReturn && plan === PLAN_IDS.FREE && Boolean(planHandle),
+    billingCancelled:
+      billingReturn && plan === PLAN_IDS.FREE && !planHandle,
     manualAuditsRemaining:
       features.maxManualAuditsPerMonth === Infinity
         ? null
@@ -110,7 +118,7 @@ export const action = async ({ request }) => {
 };
 
 export default function PlansPage() {
-  const { plan, plans, billingSucceeded, billingCancelled, manualAuditsRemaining } =
+  const { plan, plans, billingSucceeded, billingPending, billingCancelled, manualAuditsRemaining } =
     useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
@@ -118,13 +126,17 @@ export default function PlansPage() {
   useEffect(() => {
     if (billingSucceeded) {
       shopify.toast.show("Abonnement activé avec succès");
+    } else if (billingPending) {
+      shopify.toast.show(
+        "Activation en cours — rechargez la page dans quelques secondes",
+      );
     } else if (billingCancelled) {
       shopify.toast.show(
-        "Abonnement non activé — vous restez sur le plan Gratuit",
+        "Abonnement non confirmé — vous restez sur le plan Gratuit",
         { isError: true },
       );
     }
-  }, [billingSucceeded, billingCancelled, shopify]);
+  }, [billingSucceeded, billingPending, billingCancelled, shopify]);
 
   return (
     <s-page heading="Abonnement JuriShop">

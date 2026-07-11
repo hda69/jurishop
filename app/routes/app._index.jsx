@@ -56,7 +56,7 @@ export const loader = async ({ request }) => {
   const { getPlanFeatures } = await import("../billing/plans.server.js");
   const { PLAN_MARKETING } = await import("../billing/plans.constants.js");
   const { admin, session, billing } = await authenticate.admin(request);
-  await syncBillingPlanFromShopify(session.shop, billing);
+  await syncBillingPlanFromShopify(session.shop, billing, { admin });
   const shop = session.shop;
 
   const profile = await ensureAuditCurrent(admin, shop);
@@ -103,7 +103,7 @@ export const loader = async ({ request }) => {
 
 export const action = async ({ request }) => {
   const { admin, session, billing } = await authenticate.admin(request);
-  await syncBillingPlanFromShopify(session.shop, billing);
+  await syncBillingPlanFromShopify(session.shop, billing, { admin });
   const formData = await request.formData();
 
   if (formData.get("intent") === "run_audit") {

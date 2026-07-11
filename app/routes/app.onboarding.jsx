@@ -24,7 +24,7 @@ const STEPS = [
 
 export const loader = async ({ request }) => {
   const { admin, session, billing } = await authenticate.admin(request);
-  await syncBillingPlanFromShopify(session.shop, billing);
+  await syncBillingPlanFromShopify(session.shop, billing, { admin });
   await ensureShopProfile(session.shop);
   const profile = serializeProfile(await getShopProfile(session.shop));
 
@@ -46,7 +46,7 @@ export const loader = async ({ request }) => {
 
 export const action = async ({ request }) => {
   const { admin, session, billing } = await authenticate.admin(request);
-  await syncBillingPlanFromShopify(session.shop, billing);
+  await syncBillingPlanFromShopify(session.shop, billing, { admin });
   const formData = await request.formData();
   const intent = formData.get("intent");
 

@@ -7,6 +7,7 @@ import {
 } from "@shopify/shopify-app-react-router/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
+import { isPartnerBillingConfigured } from "./billing/partner-api.server.js";
 import {
   EXPERT_ANNUAL_PLAN,
   EXPERT_PLAN,
@@ -107,6 +108,13 @@ if (process.env.NODE_ENV === "production") {
   if (!process.env.SUPPORT_EMAIL?.trim()) {
     console.warn(
       "[JuriShop] SUPPORT_EMAIL non défini — requis pour /privacy et la fiche App Store.",
+    );
+  }
+  if (!isPartnerBillingConfigured()) {
+    console.warn(
+      "[JuriShop] Partner API non configurée (SHOPIFY_PARTNER_ORG_ID, " +
+        "SHOPIFY_PARTNER_ACCESS_TOKEN, SHOPIFY_APP_GID) — la vérification " +
+        "App Pricing après paiement peut échouer.",
     );
   }
 }
