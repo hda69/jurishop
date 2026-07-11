@@ -1,11 +1,11 @@
 import prisma from "../db.server.js";
 import { fetchActivePlanHandleFromPartner } from "./partner-api.server.js";
+import { resolveBillingTestMode, isBillingTestModeEnvOnly } from "./billing-test.server.js";
 import {
   BILLING_PLANS,
   effectivePlanFromProfile,
   getEffectivePlanFeatures,
   getPlanFeatures,
-  isBillingTestMode,
   PAID_SUBSCRIPTION_STATUS,
   pickPaidPlanFromSubscriptions,
   planFromPlanHandle,
@@ -81,12 +81,26 @@ async function persistPaidPlan(shop, plan, { subscriptionId = null, planHandle =
   }
 }
 
-async function checkBillingApiPlan(billing) {
-  const { appSubscriptions } = await billing.check({
+async function checkBillingApiPlan(billing, admin, shop) {
+  const isTest = admin
+    ? await resolveBillingTestMode(admin, shop)
+    : isBillingTestModeEnvOnly();
+
+  const primary = await billing.check({
     plans: BILLING_PLANS,
-    isTest: isBillingTestMode(),
+    isTest,
   });
-  return pickPaidPlanFromSubscriptions(appSubscriptions);
+  let result = pickPaidPlanFromSubscriptions(primary.appSubscriptions);
+
+  if (result.plan === PLAN_IDS.FREE && !isTest) {
+    const fallback = await billing.check({
+      plans: BILLING_PLANS,
+      isTest: true,
+    });
+    result = pickPaidPlanFromSubscriptions(fallback.appSubscriptions);
+  }
+
+  return result;
 }
 
 /**
@@ -119,7 +133,7 @@ export async function syncBillingPlanFromShopify(
 
   const attempts = retryOnReturn ? 5 : 1;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
-    const { plan, subscription } = await checkBillingApiPlan(billing);
+    const { plan, subscription } = await checkBillingApiPlan(billing, admin, shop);
     if (plan !== PLAN_IDS.FREE) {
       await persistPaidPlan(shop, plan, {
         subscriptionId: subscription.id,

@@ -53,8 +53,8 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session, billing, redirect } = await authenticate.admin(request);
-  return handlePlansBillingAction(request, { session, billing, redirect });
+  const { session, billing, redirect, admin } = await authenticate.admin(request);
+  return handlePlansBillingAction(request, { session, billing, redirect, admin });
 };
 
 export default function PlansPage() {

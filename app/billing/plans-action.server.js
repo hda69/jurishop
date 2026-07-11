@@ -4,7 +4,8 @@ import {
   PRO_ANNUAL_PLAN,
   PRO_PLAN,
 } from "../shopify.server.js";
-import { BILLING_PLANS, isBillingTestMode } from "./plans.server.js";
+import { BILLING_PLANS } from "./plans.server.js";
+import { resolveBillingTestMode } from "./billing-test.server.js";
 import { setBillingPlanFree } from "./subscription.server.js";
 import { buildEmbeddedBillingReturnUrl } from "./return-url.server.js";
 import { redirectToAppPricingPlanSelection } from "./app-pricing.server.js";
@@ -18,7 +19,10 @@ const SUBSCRIBE_INTENTS = {
   subscribe_expert_annual: EXPERT_ANNUAL_PLAN,
 };
 
-export async function handlePlansBillingAction(request, { session, billing, redirect }) {
+export async function handlePlansBillingAction(
+  request,
+  { session, billing, redirect, admin },
+) {
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -36,10 +40,13 @@ export async function handlePlansBillingAction(request, { session, billing, redi
   const returnUrl = buildEmbeddedBillingReturnUrl(session, "/app/plans", {
     billing_return: "1",
   });
-  const test = isBillingTestMode();
+  const test = await resolveBillingTestMode(admin, session.shop);
 
   const planKey = SUBSCRIBE_INTENTS[intent];
   if (planKey) {
+    console.log(
+      `[JuriShop] billing.request plan=${planKey} isTest=${test} shop=${session.shop}`,
+    );
     return billing.request({
       plan: planKey,
       isTest: test,

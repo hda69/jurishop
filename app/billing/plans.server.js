@@ -88,11 +88,7 @@ export function planFromPlanHandle(planHandle) {
   return planFromSubscriptionName(planHandle);
 }
 
-export function isBillingTestMode() {
-  if (process.env.SHOPIFY_BILLING_TEST === "true") return true;
-  if (process.env.SHOPIFY_BILLING_TEST === "false") return false;
-  return process.env.NODE_ENV !== "production";
-}
+export { resolveBillingTestMode, isBillingTestModeEnvOnly as isBillingTestMode } from "./billing-test.server.js";
 
 /** Seul un abonnement ACTIVE donne accès aux fonctionnalités payantes. */
 export const PAID_SUBSCRIPTION_STATUS = "ACTIVE";
