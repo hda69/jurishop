@@ -8,6 +8,7 @@ import {
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
 import { isPartnerBillingConfigured } from "./billing/partner-api.server.js";
+import { useShopifyAppPricing } from "./billing/billing-mode.server.js";
 import {
   EXPERT_ANNUAL_PLAN,
   EXPERT_PLAN,
@@ -115,6 +116,12 @@ if (process.env.NODE_ENV === "production") {
       "[JuriShop] Partner API non configurée (SHOPIFY_PARTNER_ORG_ID, " +
         "SHOPIFY_PARTNER_ACCESS_TOKEN, SHOPIFY_APP_GID) — la vérification " +
         "App Pricing après paiement peut échouer.",
+    );
+  }
+  if (useShopifyAppPricing()) {
+    console.warn(
+      "[JuriShop] SHOPIFY_BILLING_MODE=app_pricing — la page forfaits peut " +
+        "404 tant que l'app n'est pas publiée sur l'App Store.",
     );
   }
 }

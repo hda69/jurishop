@@ -2,38 +2,42 @@ import { useFetcher, useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useEffect } from "react";
-import {
-  authenticate,
-} from "../shopify.server";
-import { PLAN_IDS, PLAN_MARKETING } from "../billing/plans.constants.js";
+import { authenticate } from "../shopify.server";
+import { PLAN_IDS, PLAN_MARKETING, PLAN_PRICING } from "../billing/plans.constants.js";
 import { PLAN_COMPARISON_ROWS } from "../billing/plans.comparison.js";
-import {
-  resolveMerchantPlan,
-} from "../billing/subscription.server.js";
-import { redirectToAppPricingPlanSelection, buildAppPricingPlanSelectionUrl } from "../billing/app-pricing.server.js";
+import { resolveMerchantPlan } from "../billing/subscription.server.js";
+import { handlePlansBillingAction } from "../billing/plans-action.server.js";
+import { buildAppPricingPlanSelectionUrl } from "../billing/app-pricing.server.js";
+import { useShopifyAppPricing } from "../billing/billing-mode.server.js";
 
 export const loader = async ({ request }) => {
   const url = new URL(request.url);
   const planHandle = url.searchParams.get("plan_handle");
+  const chargeId = url.searchParams.get("charge_id");
   const billingReturn =
-    url.searchParams.get("billing_return") === "1" || Boolean(planHandle);
+    url.searchParams.get("billing_return") === "1" ||
+    Boolean(planHandle) ||
+    Boolean(chargeId);
 
   const { plan, features, profile, session } = await resolveMerchantPlan(request, authenticate, {
     planHandleFromUrl: planHandle,
     retryOnReturn: billingReturn,
   });
 
+  const appPricing = useShopifyAppPricing();
+
   return {
     plan,
     features,
     plans: PLAN_MARKETING,
-    planSelectionUrl: buildAppPricingPlanSelectionUrl(session),
+    billingMode: appPricing ? "app_pricing" : "manual",
+    planSelectionUrl: appPricing ? buildAppPricingPlanSelectionUrl(session) : null,
     billingReturn,
     billingSucceeded: billingReturn && plan !== PLAN_IDS.FREE,
     billingPending:
-      billingReturn && plan === PLAN_IDS.FREE && Boolean(planHandle),
+      billingReturn && plan === PLAN_IDS.FREE && Boolean(planHandle || chargeId),
     billingCancelled:
-      billingReturn && plan === PLAN_IDS.FREE && !planHandle,
+      billingReturn && plan === PLAN_IDS.FREE && !planHandle && !chargeId,
     manualAuditsRemaining:
       features.maxManualAuditsPerMonth === Infinity
         ? null
@@ -49,32 +53,24 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session, redirect } = await authenticate.admin(request);
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (
-    intent === "subscribe_pro" ||
-    intent === "subscribe_pro_annual" ||
-    intent === "subscribe_expert" ||
-    intent === "subscribe_expert_annual" ||
-    intent === "manage_plans"
-  ) {
-    return redirectToAppPricingPlanSelection(session, redirect);
-  }
-
-  if (intent === "select_free") {
-    return redirectToAppPricingPlanSelection(session, redirect);
-  }
-
-  return { ok: false };
+  const { session, billing, redirect } = await authenticate.admin(request);
+  return handlePlansBillingAction(request, { session, billing, redirect });
 };
 
 export default function PlansPage() {
-  const { plan, plans, planSelectionUrl, billingSucceeded, billingPending, billingCancelled, manualAuditsRemaining } =
-    useLoaderData();
+  const {
+    plan,
+    plans,
+    billingMode,
+    planSelectionUrl,
+    billingSucceeded,
+    billingPending,
+    billingCancelled,
+    manualAuditsRemaining,
+  } = useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
+  const appPricing = billingMode === "app_pricing";
 
   useEffect(() => {
     if (billingSucceeded) {
@@ -140,22 +136,85 @@ export default function PlansPage() {
                   {item.id === PLAN_IDS.FREE && !isCurrent && (
                     <fetcher.Form method="post">
                       <input type="hidden" name="intent" value="select_free" />
-                      <s-button type="submit" variant="secondary">
-                        Revenir au plan Gratuit (via Shopify)
+                      <s-button
+                        type="submit"
+                        variant="secondary"
+                        onClick={(e) => {
+                          if (
+                            !appPricing &&
+                            !window.confirm(
+                              "Revenir au plan Gratuit ? Votre abonnement payant sera annulé.",
+                            )
+                          ) {
+                            e.preventDefault();
+                          }
+                        }}
+                      >
+                        {appPricing
+                          ? "Revenir au plan Gratuit (via Shopify)"
+                          : "Revenir au plan Gratuit"}
                       </s-button>
                     </fetcher.Form>
                   )}
 
-                  {item.id === PLAN_IDS.PRO && !isCurrent && (
+                  {item.id === PLAN_IDS.PRO && !isCurrent && !appPricing && (
+                    <s-stack direction="block" gap="small">
+                      <fetcher.Form method="post">
+                        <input type="hidden" name="intent" value="subscribe_pro" />
+                        <s-button type="submit" variant="primary">
+                          Pro mensuel — 24 €/mois (14 jours d&apos;essai)
+                        </s-button>
+                      </fetcher.Form>
+                      <fetcher.Form method="post">
+                        <input
+                          type="hidden"
+                          name="intent"
+                          value="subscribe_pro_annual"
+                        />
+                        <s-button type="submit" variant="secondary">
+                          Pro annuel — {PLAN_PRICING[PLAN_IDS.PRO].annualLabel} (
+                          {PLAN_PRICING[PLAN_IDS.PRO].annualSavings})
+                        </s-button>
+                      </fetcher.Form>
+                    </s-stack>
+                  )}
+
+                  {item.id === PLAN_IDS.PRO && !isCurrent && appPricing && (
                     <fetcher.Form method="post">
                       <input type="hidden" name="intent" value="subscribe_pro" />
                       <s-button type="submit" variant="primary">
-                        Choisir Pro sur Shopify (mensuel ou annuel)
+                        Choisir Pro sur Shopify
                       </s-button>
                     </fetcher.Form>
                   )}
 
-                  {item.id === PLAN_IDS.EXPERT && !isCurrent && (
+                  {item.id === PLAN_IDS.EXPERT && !isCurrent && !appPricing && (
+                    <s-stack direction="block" gap="small">
+                      <fetcher.Form method="post">
+                        <input
+                          type="hidden"
+                          name="intent"
+                          value="subscribe_expert"
+                        />
+                        <s-button type="submit" variant="primary">
+                          Expert mensuel — 59 €/mois (14 jours d&apos;essai)
+                        </s-button>
+                      </fetcher.Form>
+                      <fetcher.Form method="post">
+                        <input
+                          type="hidden"
+                          name="intent"
+                          value="subscribe_expert_annual"
+                        />
+                        <s-button type="submit" variant="secondary">
+                          Expert annuel — {PLAN_PRICING[PLAN_IDS.EXPERT].annualLabel}{" "}
+                          ({PLAN_PRICING[PLAN_IDS.EXPERT].annualSavings})
+                        </s-button>
+                      </fetcher.Form>
+                    </s-stack>
+                  )}
+
+                  {item.id === PLAN_IDS.EXPERT && !isCurrent && appPricing && (
                     <fetcher.Form method="post">
                       <input
                         type="hidden"
@@ -163,7 +222,7 @@ export default function PlansPage() {
                         value="subscribe_expert"
                       />
                       <s-button type="submit" variant="primary">
-                        Choisir Expert sur Shopify (mensuel ou annuel)
+                        Choisir Expert sur Shopify
                       </s-button>
                     </fetcher.Form>
                   )}
@@ -220,22 +279,30 @@ export default function PlansPage() {
       </s-section>
 
       <s-section slot="aside" heading="Facturation Shopify">
-        <s-paragraph>
-          Les plans sont gérés par Shopify (page officielle de facturation).
-          Vous y choisissez le plan, mensuel ou annuel, puis vous approuvez le
-          montant sur votre facture Shopify.
-        </s-paragraph>
-        <s-paragraph color="subdued">
-          Essai 14 jours sur Pro et Expert. Annulation ou changement de plan via
-          la même page Shopify.
-        </s-paragraph>
-        {planSelectionUrl && (
-          <s-paragraph color="subdued">
-            Lien direct (si la redirection échoue) :{" "}
-            <a href={planSelectionUrl} target="_top" rel="noreferrer">
-              Ouvrir la page forfaits Shopify
-            </a>
-          </s-paragraph>
+        {appPricing ? (
+          <>
+            <s-paragraph>
+              Les plans sont gérés par la page officielle Shopify (App Pricing).
+            </s-paragraph>
+            {planSelectionUrl && (
+              <s-paragraph color="subdued">
+                <a href={planSelectionUrl} target="_top" rel="noreferrer">
+                  Ouvrir la page forfaits Shopify
+                </a>
+              </s-paragraph>
+            )}
+          </>
+        ) : (
+          <>
+            <s-paragraph>
+              Choisissez mensuel ou annuel ci-dessous. Vous serez redirigé vers
+              la page de confirmation Shopify intégrée à l&apos;admin.
+            </s-paragraph>
+            <s-paragraph color="subdued">
+              Essai 14 jours sur Pro et Expert. Le montant apparaît sur votre
+              facture Shopify.
+            </s-paragraph>
+          </>
         )}
       </s-section>
     </s-page>
