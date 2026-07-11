@@ -119,9 +119,8 @@ if (process.env.NODE_ENV === "production") {
     );
   }
   if (useShopifyAppPricing()) {
-    console.warn(
-      "[JuriShop] SHOPIFY_BILLING_MODE=app_pricing — la page forfaits peut " +
-        "404 tant que l'app n'est pas publiée sur l'App Store.",
+    console.log(
+      "[JuriShop] Shopify App Pricing actif — billing.request() désactivé (API Shopify).",
     );
   }
 }

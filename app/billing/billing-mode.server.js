@@ -1,8 +1,8 @@
 /**
- * manual — Billing API in-app (billing.request). Requis tant que l'app n'est pas
- * publiée : la page App Pricing hébergée renvoie 404 en revue.
- * app_pricing — redirection vers la page Shopify (après publication App Store).
+ * JuriShop est inscrit à Shopify App Pricing — billing.request() est interdit
+ * par Shopify (« Managed Pricing Apps cannot use the Billing API »).
+ * Seule la redirection vers la page forfaits hébergée par Shopify est possible.
  */
 export function useShopifyAppPricing() {
-  return process.env.SHOPIFY_BILLING_MODE === "app_pricing";
+  return true;
 }

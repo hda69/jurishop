@@ -348,9 +348,11 @@ Contact support : [même adresse que SUPPORT_EMAIL sur Railway]
   - `jurishop-pro`, `jurishop-pro-annual` (240 €/an)
   - `jurishop-expert`, `jurishop-expert-annual` (590 €/an)
   - L’option annuelle du formulaire Pro/Expert **ne pilote pas** `billing.request()` — le marchand choisit via les boutons dans l’app.
-- [ ] **Facturation** — mode `manual` sur Railway (`SHOPIFY_BILLING_MODE=manual`) tant que l'app est en revue
-- [ ] **Partner Dashboard → Pricing → Settings** : désactiver **Shopify App Pricing** (sinon conflit + 404 page forfaits)
-- [ ] `SHOPIFY_BILLING_TEST=false` sur Railway (production réelle)
+- [ ] **Partner Dashboard → Pricing → Settings** : **Shopify App Pricing** activé (ne pas passer en Manual pricing)
+- [ ] **Plan test privé 0 €** créé (Private plans) pour les boutiques dev / revue Shopify
+- [ ] **Welcome link** = `/app/plans` sur chaque plan (Gratuit, Pro, Expert)
+- [ ] Descriptions des plans en **français** (locale listing = locale boutique de test)
+- [ ] `SHOPIFY_BILLING_TEST=false` sur Railway — ne pas utiliser `billing.request()` (bloqué par Shopify)
 - [ ] **Partner API** sur Railway (App Pricing — vérif abonnement après paiement) :
   - `SHOPIFY_PARTNER_ORG_ID` — ID org dans l’URL Partner Dashboard
   - `SHOPIFY_PARTNER_ACCESS_TOKEN` — token client Partner API (permission Manage apps)
