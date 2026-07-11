@@ -4,6 +4,7 @@ client_id = "acc0dd36ed1fe825a6df97dce173b8fe"
 application_url = "https://jurishop-production.up.railway.app"
 embedded = true
 name = "jurishop"
+handle = "jurishop"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
@@ -55,3 +56,4 @@ redirect_urls = [
 
 [build]
 automatically_update_urls_on_dev = true
+include_config_on_deploy = true

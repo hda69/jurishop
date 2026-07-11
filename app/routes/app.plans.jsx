@@ -10,7 +10,7 @@ import { PLAN_COMPARISON_ROWS } from "../billing/plans.comparison.js";
 import {
   resolveMerchantPlan,
 } from "../billing/subscription.server.js";
-import { redirectToAppPricingPlanSelection } from "../billing/app-pricing.server.js";
+import { redirectToAppPricingPlanSelection, buildAppPricingPlanSelectionUrl } from "../billing/app-pricing.server.js";
 
 export const loader = async ({ request }) => {
   const url = new URL(request.url);
@@ -18,7 +18,7 @@ export const loader = async ({ request }) => {
   const billingReturn =
     url.searchParams.get("billing_return") === "1" || Boolean(planHandle);
 
-  const { plan, features, profile } = await resolveMerchantPlan(request, authenticate, {
+  const { plan, features, profile, session } = await resolveMerchantPlan(request, authenticate, {
     planHandleFromUrl: planHandle,
     retryOnReturn: billingReturn,
   });
@@ -27,6 +27,7 @@ export const loader = async ({ request }) => {
     plan,
     features,
     plans: PLAN_MARKETING,
+    planSelectionUrl: buildAppPricingPlanSelectionUrl(session),
     billingReturn,
     billingSucceeded: billingReturn && plan !== PLAN_IDS.FREE,
     billingPending:
@@ -70,7 +71,7 @@ export const action = async ({ request }) => {
 };
 
 export default function PlansPage() {
-  const { plan, plans, billingSucceeded, billingPending, billingCancelled, manualAuditsRemaining } =
+  const { plan, plans, planSelectionUrl, billingSucceeded, billingPending, billingCancelled, manualAuditsRemaining } =
     useLoaderData();
   const fetcher = useFetcher();
   const shopify = useAppBridge();
@@ -228,6 +229,14 @@ export default function PlansPage() {
           Essai 14 jours sur Pro et Expert. Annulation ou changement de plan via
           la même page Shopify.
         </s-paragraph>
+        {planSelectionUrl && (
+          <s-paragraph color="subdued">
+            Lien direct (si la redirection échoue) :{" "}
+            <a href={planSelectionUrl} target="_top" rel="noreferrer">
+              Ouvrir la page forfaits Shopify
+            </a>
+          </s-paragraph>
+        )}
       </s-section>
     </s-page>
   );
